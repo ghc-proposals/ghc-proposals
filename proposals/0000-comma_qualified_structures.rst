@@ -81,18 +81,19 @@ This proposal introduces the following syntactical changes to Haskell:
 
 2. Add language extension ``ExtraCommas`` which is just unification of 2 extensions: ``ExtraCommas = CommaTuples + ExtraNonTupleCommas``
 
-3. **Comma qualified tuples**: Allow to write ``data`` keyword after tuple 
-   (and tuple-like strucures) close bracket `)` in tuples, 
+3. **Comma qualified tuples**: Allow to write ``data`` keyword after tuple close bracket `)` in tuples, 
    unboxed-tuples, constraint tuples and class context at terms and types.
 
-   Comma qualified tuples by meaning are indistinguishable from ordinary tuples, but they are different in syntax.
+   Comma qualified tuples (and tuple-like strucures) by meaning are indistinguishable 
+   from ordinary tuples, but they are different in syntax.
    
    Tuple ``(a, b, c)`` is the same as ``(, a, b, c,) data`` in types or class context;
    and ``(x, y, z)`` is the same as ``(, x, y, z,) data`` in terms. 
 
-   The only difference between comma-qualified and ordinary tuples is:
+   The only difference between comma-qualified and ordinary tuples (and tuple-like strucures) is:
 
-   - ordinary tuples don't allow extra commas, but allow curried tupling constructors and ``TupletSections`` (if values are not Constraint kind)
+   - ordinary tuples don't allow extra commas, but allow curried tupling constructors 
+     and ``TupletSections`` (if values are not Constraint kind)
    
    - comma-qualified tuples allow extra commas, but ignore ``TupletSections``
    
@@ -119,11 +120,14 @@ This proposal introduces the following syntactical changes to Haskell:
        mySoloTuple :: (Int) data
        mySoloTuple  = (5,) data
 
-5. **Comma Qualified unit-tuples**: Allow to write unit-tuples 
-   (and tuple-like strucures) with ``data`` keyword and just 1 extra comma::
+5. **Comma Qualified unit-tuples**: It is allowed to write unit-tuples 
+   (and tuple-like strucures), but not in constructors 
+   with ``data`` keyword, but without any extra comma::
 
-       myUnitTuple :: (,) data
-       myUnitTuple  = (,) data
+       myUnitTuple  :: () data
+       myUnitTuple   = () data
+
+       myUnitTuple2  = (,) data   -- forbidden
 
 
 Syntax
@@ -138,21 +142,21 @@ Syntax for tuples, unboxed tuples, constraint tuples:
     ;-- kmax = if 'data' then 1 else 2
 
     atype ::= gtycon
-        | '(' [','] ')'   'data'                                                  (comma empty tuple type)           ;-- new
+        | '(' ')'     'data'                                                      (comma empty tuple type)           ;-- new
         | '('  ',' type1 ',' … ',' typek [',']  ')'  'data'                       (comma tuple type, k ≥ 1)          ;-- upd
         | '('      type1 ',' … ',' typek (( ',' ')'  'data' )|( ')' ['data'] ))   (tuple type, k ≥ kmax)             ;-- new
-        | '(#' [','] '#)'   'data'                                                (comma empty unboxed tuple type)   ;-- new
+        | '(#' '#)'   'data'                                                      (comma empty unboxed tuple type)   ;-- new
         | '(#'  ',' type1 ',' … ',' typek [',']  '#)' 'data'                      (unboxed comma-tuple type, k ≥ 1)  ;-- upd
         | '(#'      type1 ',' … ',' typek (( ',' '#)' 'data' )|( '#)' ['data'] )) (unboxed tuple type, k ≥ 1)        ;-- new
         | ……
 
-    aexp ::= qvar                                                                  (variable)
+    aexp ::= qvar                                                                 (variable)
         | ……
         | '(' exp ')'                                                             (parenthesized expression)
-        | '(' [','] ')'   'data'                                                  (comma empty tuple)                ;-- new
+        | '(' ')'    'data'                                                       (comma empty tuple)                ;-- new
         | '('  ',' exp1 ',' … ',' expk [',']  ')'  'data'                         (comma tuple, k ≥ 1)               ;-- upd
         | '('      exp1 ',' … ',' expk (( ',' ')'  'data' )|( ')' ['data'] ))     (tuple, k ≥ kmax)                  ;-- new
-        | '(#' [','] '#)'   'data'                                                (comma empty unboxed tuple)        ;-- new
+        | '(#' '#)'  'data'                                                       (comma empty unboxed tuple)        ;-- new
         | '(#'  ',' exp1 ',' … ',' expk [',']  '#)' 'data'                        (unboxed comma-tuple, k ≥ kmax)    ;-- upd
         | '(#'      exp1 ',' … ',' expk (( ',' '#)' 'data' )|( '#)' ['data'] ))   (unboxed tuple, k ≥ 1)             ;-- new
         | '(' infixexp qop ')'                                                    (left section)
@@ -161,10 +165,10 @@ Syntax for tuples, unboxed tuples, constraint tuples:
     apat ::= var [ @ apat]                                                        (as pattern)
         | ……
         | '(' pat ')'                                                             (parenthesized pattern)
-        | '(' [','] ')'   'data'                                                  (comma empty tuple pattern)             ;-- new
+        | '(' ')'     'data'                                                      (comma empty tuple pattern)             ;-- new
         | '('  ',' pat1 ',' … ',' patk [',']  ')'  'data'                         (comma tuple pattern, k ≥ 1)            ;-- upd
         | '('      pat1 ',' … ',' expk (( ',' ')'  'data' )|( ')' ['data'] ))     (tuple pattern, k ≥ kmax)               ;-- new
-        | '(#' [','] '#)'   'data'                                                (comma empty unboxed tuple pattern)     ;-- new
+        | '(#' '#)'   'data'                                                      (comma empty unboxed tuple pattern)     ;-- new
         | '(#'  ',' pat1 ',' … ',' patk [',']  '#)' 'data'                        (unboxed comma-tuple, k ≥ kmax pattern) ;-- upd
         | '(#'      pat1 ',' … ',' patk (( ',' '#)' 'data' )|( '#)' ['data'] ))   (unboxed tuple pattern, k ≥ 1)          ;-- new
 
@@ -188,20 +192,22 @@ Syntax for class content and class simplified content:
         | infixexp
 
     context ::= class
+        | '(' ')'  ['data']                                               ;-- upd
         | '(' ',' cntclasses [','] ')' 'data'                             ;-- upd
         | '(' cntclasses ((')' ['data']) | (',' ')' 'data'))              ;-- upd
 
 
     scontext ::= simpleclass
+        | '(' ')'  ['data']                                               ;-- upd
         | '(' ',' scntclasses [','] ')' 'data'                            ;-- upd
         | '(' scntclasses ((')' ['data']) | (',' ')' 'data'))             ;-- upd
 		
-    cntclasses ::= class1 ',' … ',' classn                       (n ≥ 0)  ;-- upd
+    cntclasses ::= class1 ',' … ',' classn                       (n ≥ 1)  ;-- upd
 
     class ::= qtycls tyvar
         | qtycls '(' tyvar atype1 … atypen ')'                   (n ≥ 1)
 
-    scntclasses ::= simpleclass1 ',' … ',' simpleclassn          (n ≥ 0)  ;-- upd
+    scntclasses ::= simpleclass1 ',' … ',' simpleclassn          (n ≥ 1)  ;-- upd
 
     simpleclass ::= qtycls tyvar
  
