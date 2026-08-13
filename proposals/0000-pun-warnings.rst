@@ -245,32 +245,43 @@ etc. Some names are global and fixed, like ``[]``, ``()``, and ``(,)``, but that
 just means they occur in every scope and there is no way to shadow them.
 
 At definition sites, ``-Wpun-bindings`` triggers for a node that extends or
-shadows names in a scope if it modifies the same name in both the term
-and type environments.
+shadows names in a scope if it modifies the same name in both the term and type
+environments.
 
 At use sites, it is more difficult to check for punning, because even if the
-same name occurs in both the term and type environments, the name might
-have been shadowed if we had a unified namespace, making it unambiguous.
-For example, `\ a -> (id :: forall a. a -> a)` does not trigger a warning on the uses
-of `a`, because under a unified namespace, the `forall a` binder would shadow
-the `\ a` binder.
+same name occurs in both the term and type environments, the name might have
+been shadowed if we had a unified namespace, making it unambiguous. For example,
+`\ a -> (id :: forall a. a -> a)` does not trigger a warning on the uses of `a`,
+because under a unified namespace, the `forall a` binder would shadow the `\ a`
+binder.
 
 To track this we introduce a third, unified environment, mapping names to terms
-or types. Whenever a name is modified (added or shadowed) in the term
-or type environments, the same modification is applied to the unified
-environment too. (If the set of names in the term and type environments are disjoint, then the
-unified environment is simply the union of the term and type environments.)
-When the same name is modified in both the term and type
-environments we mark the name as conflicted in the unified environment.
-(This happens at definition sites for which `-Wpun-bindings` emits a warning,
-but can also happen without a warning, e.g. where the same name is imported
-as a type from one module and as a term from another.)
+or types. Whenever a name is modified (added or shadowed) in the term or type
+environments, the same modification is applied to the unified environment too.
+(If the set of names in the term and type environments are disjoint, then the
+unified environment is simply the union of the term and type environments.) When
+the same name is modified in both the term and type environments we mark the
+name as conflicted in the unified environment. (This happens at definition sites
+for which `-Wpun-bindings` emits a warning, but can also happen without a
+warning, for example where the same name is imported as a type from one module
+and as a term from another.)
 
-The ``-Wpun-uses`` warning triggers at a variable use site if looking up the variable in the
-unified environment yields a different result from looking it up normally (in the
-term or type environment, as appropriate). That is,
-either the variable has been shadowed in a different namespace or it
-has been marked as conflicted.
+Note that a scope modification may be conditional on the names that are already
+in scope. For example, in type signatures we implicitly quantify over all the
+unbound (free) type variables (`example #2`_), and in pattern signatures a type
+variable might either be an occurrence or a fresh binding. This can cause the
+contents of the unified environment to diverge from the other environments.
+
+The ``-Wpun-uses`` warning triggers at a variable use site if looking up the
+variable in the unified environment yields a different result from looking it up
+normally (in the term or type environment, as appropriate).
+This can have one of three reasons:
+
+1. The variable has been shadowed in a different namespace, or
+2. it has been marked as conflicted, or
+3. the namespaces have diverged due to conditional scope modifications.
+
+
 
 Examples
 ========
@@ -543,3 +554,269 @@ Jaro Reinders will implement the change.
 
 There's an (old) merge request with ``-Wpun-uses`` warning implementation: `!2044 <https://gitlab.haskell.org/ghc/ghc/merge_requests/2044>`_.
 This will be rebased or if that is too much work it will be used as inspiration. 
+
+.. _appendix A:
+
+Appendix A: Executable Specification
+====================================
+
+::
+
+  import Data.Map (Map, (!?))
+  import qualified Data.Map as Map
+  import Data.Maybe (catMaybes)
+
+  type Unique = String
+
+  data Scope = MkScope
+    { types :: Map String Unique
+    , terms :: Map String Unique
+    , unified :: Map String (Maybe Unique) -- Nothing means conflict
+    } deriving Show
+
+  -- we could add an explicit binding node
+  data AST scope = Node Unique NodeInfo scope [AST scope] deriving Show
+
+  -- if a binding cannot shadow then it just reuses the existing binding
+  -- this is used for implicitly quantified type variables (e.g. pun use example #2)
+  data Shadowing = CanShadow | CannotShadow deriving Show
+  data IsImport = YesImport | NotImport deriving Show
+  data Namespace = Ty | Tm deriving Show
+
+  data NodeInfo = Other | Bind Shadowing [(IsImport,Namespace,String,Unique)] | Var Namespace String
+    deriving Show
+
+  var :: Unique -> Namespace -> String -> AST ()
+  var u ns name = Node u (Var ns name) () []
+
+  computeScopes :: Scope -> AST () -> AST Scope
+  computeScopes (MkScope tys tms uni) (Node x (Bind sh bs) () xs) = 
+    let 
+      tysd = Map.fromListWith (\_ _ -> error "name bound multiple times at once") [(name,u) | (_,Ty,name,u) <- bs]
+      tmsd = Map.fromListWith (\_ _ -> error "name bound multiple times at once") [(name,u) | (_,Tm,name,u) <- bs]
+      unid = Map.fromListWith (\_ _ -> Nothing) [(name,Just u) | (_,_,name,u) <- bs]
+      f l r = case sh of CanShadow -> l; CannotShadow -> r
+      s = MkScope
+        (Map.unionWith f tysd tys)
+        (Map.unionWith f tmsd tms)
+        (Map.unionWith f unid uni)
+    in Node x (Bind sh bs) s (map (computeScopes s) xs)
+  computeScopes parent (Node x ni () xs) = Node x ni parent (map (computeScopes parent) xs)
+
+  data PunWarning
+    = PunUseWarning Unique String
+    | PunBindWarning Unique String
+    deriving (Eq, Show)
+
+  punBindWarnings :: AST a -> [PunWarning]
+  punBindWarnings (Node x (Bind _ bs) _ xs) =
+    catMaybes (Map.elems (Map.fromListWithKey (\name _ _ -> Just (PunBindWarning x name)) [(name, Nothing) | (NotImport,_,name,_) <- bs]))
+      ++ concatMap punBindWarnings xs
+  punBindWarnings (Node _ _ _ xs) = concatMap punBindWarnings xs
+
+  -- Add more built-in names if necessary
+  topLevelScope :: Scope
+  topLevelScope = MkScope 
+    (Map.fromList [("[]", "Listtype"),("()","unittupletype"),("(,)","tupletype")])
+    (Map.fromList [("[]", "emptylist"),("()","unittuplecon"),("(,)","tuplecon")])
+    (Map.fromList [("[]", Just "emptylist"),("()", Just "unittuplecon"),("(,)", Just "tuplecon")])
+
+  punUseWarnings :: AST Scope -> [PunWarning]
+  punUseWarnings (Node x (Var ns name) (MkScope tys tms uni) []) = 
+    case (env !? name, uni !? name) of
+      (_, Just Nothing) -> [PunUseWarning x name] -- conflict
+      (Just r, Just (Just r')) | r /= r' -> [PunUseWarning x name] -- shadowed in other namespace
+        | otherwise -> []
+      (Nothing, Just{}) -> error "punUseWarnings: improper scope"
+      (Just{}, Nothing) -> error "punUseWarnings: improper scope"
+      (Nothing, Nothing) -> []
+    where
+      env = case ns of
+        Tm -> tms
+        Ty -> tys
+  punUseWarnings (Node _ _ _ xs) = concatMap punUseWarnings xs where
+
+  punWarnings :: AST () -> [PunWarning]
+  punWarnings x = punBindWarnings x ++ punUseWarnings (computeScopes topLevelScope x)
+
+  imports :: [(Namespace, String, Unique)] -> [(IsImport, Namespace, String, Unique)]
+  imports = map (\(x,y,z) -> (YesImport,x,y,z))
+
+  notImports :: [(Namespace, String, Unique)] -> [(IsImport, Namespace, String, Unique)]
+  notImports = map (\(x,y,z) -> (NotImport,x,y,z))
+
+  punUseExample1 :: AST ()
+  punUseExample1 =
+    Node "C" (Bind CanShadow (imports [(Ty,"A", "A.A"),(Tm,"T","A.T"),(Ty,"T","B.T"),(Tm,"X","B.X")])) () [
+      Node "C.f" Other () [
+        Node "C.f.body" (Var Tm "T") () []
+      ]
+    ]
+
+  -- >>> punWarnings punUseExample1
+  -- [PunUseWarning "C.f.body" "T"]
+
+  punUseExample2 :: AST ()
+  punUseExample2 =
+    Node "Main" (Bind CanShadow (notImports [(Tm,"a","Main.a"),(Tm,"f","Main.f")])) () [
+      Node "Main.f::" (Bind CannotShadow (notImports [(Ty,"a","Main.f::.a")])) () [
+        Node "Main.f::._->" (Var Ty "a") () [],
+        Node "Main.f::.->_" (Var Ty "a") () []
+      ]
+    ]
+
+  -- >>> punWarnings punUseExample2
+  -- [PunUseWarning "Main.f::._->" "a",PunUseWarning "Main.f::.->_" "a"]
+
+  punUseExample2fixed :: AST ()
+  punUseExample2fixed =
+    Node "Main" (Bind CanShadow (notImports [(Tm,"a","Main.a"),(Tm,"f","Main.f")])) () [
+      Node "Main.f::" (Bind CanShadow (notImports [(Ty,"a","Main.f::.a")])) () [
+        Node "Main.f::._->" (Var Ty "a") () [],
+        Node "Main.f::.->_" (Var Ty "a") () []
+      ]
+    ]
+
+  -- >>> punWarnings punUseExample2fixed
+  -- []
+
+  punUseExample3 :: AST ()
+  punUseExample3 =
+    Node "Main" (Bind CanShadow (notImports [(Tm,"a","Main.a"),(Tm,"f","Main.f")])) () [
+      Node "Main.f::" (Bind CanShadow (notImports [(Ty,"a","Main.f::.a")])) () [
+        Node "Main.f::._->" (Var Ty "a") () [],
+        Node "Main.f::.->_" (Var Ty "a") () []
+      ],
+      Node "Main.f=" (Bind CanShadow (notImports [(Ty,"a","Main.f::.a")])) () [
+        Node "Main.f=.\\" (Bind CanShadow (notImports [(Tm,"a","Main.f=.\\")])) () [
+          Node "Main.f=.\\._::" (Var Tm "a") () [],
+          Node "Main.f=.\\.::_" (Var Ty "a") () []
+        ]
+      ]
+    ]
+
+  -- >>> punWarnings punUseExample3
+  -- [PunUseWarning "Main.f=.\\.::_" "a"]
+
+  -- note that I skip 'g' here, because I assume '[a]' is already desugared to 
+  -- '[] a'
+  punUseExample4 :: AST ()
+  punUseExample4 =
+    Node "Main" Other () [
+      Node "Main.f::" Other () [
+        Node "Main.f::._$" (Var Ty "[]") () [],
+        Node "Main.f::.$_" (Var Ty "a") () []
+      ],
+      Node "Main.f=" (Var Tm "[]") () [],
+      Node "Main.x=" Other () [],
+      Node "Main.h::" Other () [
+        Node "Main.h::._$" Other () [
+          Node "Main.h::._$" (Var Ty "(,)") () [],
+          Node "Main.h::.$_" (Var Ty "a") () []
+        ],
+        Node "Main.h::.$_" (Var Ty "b") () []
+      ],
+      Node "Main.h=" Other () [
+        Node "Main.h=._$" Other () [
+          Node "Main.h=._$" (Var Tm "(,)") () [],
+          Node "Main.h=.$_" (Var Tm "a") () []
+        ],
+        Node "Main.h=.$_" (Var Tm "b") () []
+      ]
+    ]
+
+  -- >>> punWarnings punUseExample4
+  -- [PunUseWarning "Main.f::._$" "[]",PunUseWarning "Main.h::._$" "(,)"]
+
+  punBindExample1 :: AST ()
+  punBindExample1 =
+    Node "Main" Other () [
+      Node "id::" Other () [{- ... -}],
+      Node "id=" (Bind CanShadow (notImports [(Ty,"a","id=0"),(Tm,"a","id=1")])) () [{- ... -}]
+    ]
+
+  -- >>> punWarnings punBindExample1
+  -- [PunBindWarning "id=" "a"]
+
+  punBindExample1b :: AST ()
+  punBindExample1b =
+    Node "Main" Other () [
+      Node "id::" Other () [{- ... -}],
+      Node "id=" (Bind CanShadow (notImports [(Ty,"a","id=0")])) () [
+        Node "id=.\\" (Bind CanShadow (notImports [(Tm,"a","id=.\\")])) () [{- ... -}]
+      ]
+    ]
+
+  -- >>> punWarnings punBindExample1b
+  -- []
+
+  punBindExample2 :: AST ()
+  punBindExample2 =
+    Node "Main" (Bind CanShadow (notImports [(Ty,"T","Main.T"),(Tm,"T","Main.T.T")])) () [
+      -- ...
+    ]
+
+  -- >>> punWarnings punBindExample2
+  -- [PunBindWarning "Main" "T"]
+
+  punBindExample3 :: AST ()
+  punBindExample3 =
+    Node "Main" (Bind CanShadow $ notImports [
+      (Ty,"T","Main.T"),
+      (Tm,"MkT","Main.T.MkT"),
+      (Ty,"B","Main.B"),
+      (Tm,"T","Main.B.T"),
+      (Ty,"T","Main.B.F")
+      ]) () [
+      -- ...
+    ]
+
+  -- >>> punWarnings punBindExample3
+  -- [PunBindWarning "Main" "T"]
+
+  punBindExample4 :: AST ()
+  punBindExample4 =
+    Node "Main" (Bind CanShadow $ imports [(Ty,"Bool","Prelude.Bool")] ++ notImports [
+      (Ty,"J","Main.J"),
+      (Tm,"Bool","Main.Bool")
+      ]) () [
+      -- ...
+    ]
+
+  -- >>> punWarnings punBindExample4
+  -- []
+
+  -- This really does need a per-variable CanShadow, because the a in
+  -- 'f @_ = \(_ :: a) -> _' could be bound if it was not in scope.
+  -- For now I just hard-code that it does not shadow.
+
+  punBindExample5 :: AST ()
+  punBindExample5 =
+    Node "Main" Other () [
+      Node "Main.f=" (Bind CanShadow $ notImports [(Ty, "a", "Main.f=.a")]) () [
+        Node "Main.f=.\\" (Bind CanShadow $ notImports [(Tm, "a", "Main.f=.\\")]) () [
+          Node "Main.f=.\\._" (Var Tm "a") () []
+        ]
+      ]
+    ]
+
+  -- >>> punWarnings punBindExample5
+  -- []
+
+  tests :: [(String, AST (), [PunWarning])]
+  tests =
+    [ ("pun use example 1", punUseExample1, [PunUseWarning "C.f.body" "T"])
+    , ("pun use example 2", punUseExample2, [PunUseWarning "Main.f::._->" "a",PunUseWarning "Main.f::.->_" "a"])
+    , ("pun use example 2 (fixed)", punUseExample2fixed, [])
+    , ("pun use example 3", punUseExample3, [PunUseWarning "Main.f=.\\.::_" "a"])
+    , ("pun use example 4", punUseExample4, [PunUseWarning "Main.f::._$" "[]",PunUseWarning "Main.h::._$" "(,)"])
+    , ("pun bind example 1", punBindExample1, [PunBindWarning "id=" "a"])
+    , ("pun bind example 1b", punBindExample1b, [])
+    , ("pun bind example 2", punBindExample2, [PunBindWarning "Main" "T"])
+    , ("pun bind example 3", punBindExample3, [PunBindWarning "Main" "T"])
+    , ("pun bind example 4", punBindExample4, [])
+    , ("pun bind example 5", punBindExample5, [])
+    ]
+
+  main :: IO ()
+  main = mapM_ (\(name,x,y) -> putStrLn (name ++ ": " ++ if punWarnings x == y then "correct!" else "failed!")) tests
