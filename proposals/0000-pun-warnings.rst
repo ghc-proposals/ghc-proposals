@@ -244,25 +244,33 @@ top-level bindings, local bindings, constructors, type constructors, classes,
 etc. Some names are global and fixed, like ``[]``, ``()``, and ``(,)``, but that
 just means they occur in every scope and there is no way to shadow them.
 
-If the set of names in the term and type environments are disjoint, then the
-unified environment is simply the union of the term and type environments.
-At definition sites this is easy to check: every node that extends or shadows
-names in a scope we check that it does not modify the same name in both the term
-and type environments. If that does happen then ``-Wpun-bindings`` triggers.
+At definition sites, ``-Wpun-bindings`` triggers for a node that extends or
+shadows names in a scope if it modifies the same name in both the term
+and type environments.
 
-At use sites, it is more difficult to check for punning, because, even if the
-same name occurs in both the term and type environments, the name might simply
-be shadowed if we had a unified namespace. To track this we introduce a third
-unified environment. Whenever a name is modified (added or shadowed) in the term
+At use sites, it is more difficult to check for punning, because even if the
+same name occurs in both the term and type environments, the name might
+have been shadowed if we had a unified namespace, making it unambiguous.
+For example, `\ a -> (id :: forall a. a -> a)` does not trigger a warning on the uses
+of `a`, because under a unified namespace, the `forall a` binder would shadow
+the `\ a` binder.
+
+To track this we introduce a third, unified environment, mapping names to terms
+or types. Whenever a name is modified (added or shadowed) in the term
 or type environments, the same modification is applied to the unified
-environment too. If the same name is modified in both the term and type
-environments we mark the name as conflicted in the unified environment. 
+environment too. (If the set of names in the term and type environments are disjoint, then the
+unified environment is simply the union of the term and type environments.)
+When the same name is modified in both the term and type
+environments we mark the name as conflicted in the unified environment.
+(This happens at definition sites for which `-Wpun-bindings` emits a warning,
+but can also happen without a warning, e.g. where the same name is imported
+as a type from one module and as a term from another.)
 
-Using this definition of the unified scopes, we can define the ``-Wpun-uses``
-warning as triggering when a variable is used for which looking it up in the
-unified environment yields a different result than looking it up normally. So,
-either when that variable has been shadowed in a different namespace or when it
-is marked as conflicted.
+The ``-Wpun-uses`` warning triggers at a variable use site if looking up the variable in the
+unified environment yields a different result from looking it up normally (in the
+term or type environment, as appropriate). That is,
+either the variable has been shadowed in a different namespace or it
+has been marked as conflicted.
 
 Examples
 ========
