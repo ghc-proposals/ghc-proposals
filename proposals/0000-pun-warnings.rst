@@ -560,6 +560,10 @@ This will be rebased or if that is too much work it will be used as inspiration.
 Appendix A: Executable Specification
 ====================================
 
+This executable specification assumes that programs have already been converted
+into an abstract AST which only concerns itself with variables and binding.
+For the examples in this proposal, I have done this conversion by hand.
+
 ::
 
   import Data.Map (Map, (!?))
