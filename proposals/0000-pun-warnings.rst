@@ -578,7 +578,6 @@ For the examples in this proposal, I have done this conversion by hand.
     , unified :: Map String (Maybe Unique) -- Nothing means conflict
     } deriving Show
 
-  -- we could add an explicit binding node
   data AST scope = Node Unique NodeInfo scope [AST scope] deriving Show
 
   -- if a binding cannot shadow then it just reuses the existing binding
@@ -790,9 +789,10 @@ For the examples in this proposal, I have done this conversion by hand.
   -- >>> punWarnings punBindExample4
   -- []
 
-  -- This really does need a per-variable CanShadow, because the a in
-  -- 'f @_ = \(_ :: a) -> _' could be bound if it was not in scope.
-  -- For now I just hard-code that it does not shadow.
+  -- The punBindExample5 below is a bit inaccurate and would really need a
+  -- per-variable CanShadow, because the a in 'f @_ = \(_ :: a) -> _' could be
+  -- bound if it was not in scope. For this example it does not matter so now I
+  -- just hard-code that it does not shadow.
 
   punBindExample5 :: AST ()
   punBindExample5 =
