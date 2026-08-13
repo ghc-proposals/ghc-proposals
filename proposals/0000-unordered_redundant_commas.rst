@@ -77,10 +77,26 @@ This proposal introduces the following syntactical changes to Haskell.
 
 Add a new language extension ``ExtraNonTupleCommas`` which allows both leading
 and trailing commas in **any** syntactic construct in which enumeration with a comma as separator is allowed, 
-**except** those that are delimited by round parentheses in terms or types (or constraints).
+**except** those that looks like tuples: which are delimited by round parentheses in either terms or types (or constraints).
+
+Sure, we allow extra comma if and only if enumeration is not empty:
+
+- an extra leading comma must precede a "list" item
+- and extra trailing comma must follow an item
+
+And the extension forbids extra commas in empty cases 
+(and Deprecate commas for export and import empty lists, because it is currently allowed):
+::
+
+    import M(,)                -- forbidden, deprecated
+
+    x  = [,]                   -- forbidden
+    y  = [,,]                  -- forbidden
+
+    data T =  MkT deriving (,) -- forbidden
 
 Note that (because of the exception) this proposal does not cover tuple-like structures
-(including tuples, constraint tuples, class context simplified and non-simplified), 
+(including tuples and unboxed tuples, constraint tuples, class context simplified and non-simplified), 
 delimited with round parentheses.  
 For example ``(,,3,4)`` is not covered by this proposal - rather, it is a tuple section 
 if extension ``-XTupleSections`` is on.
