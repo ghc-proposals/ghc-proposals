@@ -1,5 +1,5 @@
 ====================
-Local Quantifiers
+ForAlone Quantifier
 ====================
 
 .. author:: Viktor WW
@@ -14,7 +14,7 @@ Local Quantifiers
 .. _`#448`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0448-type-variable-scoping.rst
 
 
-This proposal introduces local quantifiers into GHC, which grabs local type variables.
+This proposal introduces ``foralone`` unique quantifier into GHC, which grabs local type and term variables.
 
 Motivation
 ----------
@@ -45,7 +45,7 @@ Right now there are three kinds of scoped:
   const @a x = res where
     -- uses 'a' from the lexical scope '@a'
     res :: a
-  --res :: forterm a. a
+  --res :: foralone %term a. a
     res = x
 
 * The magical / borrowed scope introduced by ``ScopedTypeVariables``
@@ -56,7 +56,7 @@ Right now there are three kinds of scoped:
   const x = res where
     -- uses 'a' from parent signature 'const :: forall a.'
     res :: a
-  --res :: fortype a. a
+  --res :: foralone %type a. a
     res = x
 
 Notice how the signature ``res :: a`` in (2) and (3) 
@@ -70,8 +70,9 @@ that the other meaning is currently!).
 This proposal says such uses of a should explicitly say they use '``a``' 
 from somewhere else (exactly which-where) in the program.
 
-This Proposal suggests to add the **ForTerm Quantifier**, **ForType Quantifier** 
-and **ForArgm Quantifier** which allow to write explicitly type signatures, 
+This Proposal suggests to add the **ForAlone Quantifier** with 3 local clarifications: 
+by term, by type and by argument.
+ForAlone quantifier allows to write explicitly type signatures, 
 which depends from internal or external type variables.
 
 Explicitness is preferential in Haskell over implicitness. 
@@ -82,8 +83,8 @@ Non-quantified type variable means that this variable is somehow-quantified.
 
 Just like ``ExplicitForall`` extension allow explicitly say exactly what 
 this specific type variable is ``forall`` quantified, 
-this Proposal allow to switch on ``LocalQuantifiers`` extension explicitly say 
-exactly what this specific type variable is local quantified!
+this Proposal allow to switch on ``ForAloneQuantifier`` extension explicitly say 
+exactly what this specific type variable is local and uniquely quantified!
 
 An additional advantage is that adding such quantifiers makes signatures 
 that have one-to-one correspondences with pure mathematical descriptions in Predicate Logic!
@@ -102,7 +103,7 @@ with opposite philosophy: compiler infer type not for holes.
 Rule (aka math-like proof)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-De facto Local Quantifiers are a special case of Existential Quantifier 
+De facto local ForAlone Quantifier is a special case of Existential Quantifier 
 (Existential Unique Quantifier), which is known during compile time.
 
 Some people have doubt that this Proposal use correct theoretical term names.
@@ -113,16 +114,16 @@ Author of this proposal use "Duck typing logic":
 
 - if it looks like "quantifier" then it is a "quantifier"
 
-- if it looks like "local quantifier" then it is a "local quantifier"
-
 - if it looks like "existential quantifier" then it is an "existential quantifier"
 
 - if it looks like "unique quantifier" then it is an "unique quantifier"
 
+- if it looks like "local quantifier" (which binds local type variables) then it is a "local quantifier"
+
 **Math-like Proof:**
 
 All local scoped and parametric non-quantified type variables in Haskell 
-are unique quantified (if not ``forall``-quantified) type variables.
+are **uniquely** quantified (if not ``forall``-quantified) type variables.
 
 ::
 
@@ -139,10 +140,10 @@ are unique quantified (if not ``forall``-quantified) type variables.
 
 If we use mathematical induction we could show that all "similar" cases could use unique quantifier.
 
-Main benefit is that all local quantifiers are utilized by Haskell-renamer,
+Main benefit is that local ForAlone quantifiers are utilized by Haskell-renamer,
 so nothing is required to change in Core-language.
 
-Local Quantifiers are just explanation to GHC which external type variable they means: 
+Local ForAlone Quantifiers are just explanation to GHC which external type variable they means: 
 they indicates the binding site of the type variable (e.g. whether it was bound by a type abstraction, 
 a scoped type variable bound in a type signature, or somewhere else).
 
@@ -150,29 +151,29 @@ a scoped type variable bound in a type signature, or somewhere else).
 Proposed Change Specification
 -----------------------------
 
-Local Quantifiers "grab"(use) already existed type variables external to this signature
+Local ForAlone Quantifier "grab"(use) already existed type variables external to this signature
 ::
 
   f :: forall a b. [a] -> [b] -> [(a, b)]
-  f @aa @bb xs ys  = zip (xs :: forterm aa. [aa]) yys
+  f @aa @bb xs ys  = zip (xs :: foralone %term aa. [aa]) yys
      where
-       yys :: fortype b. [b]
+       yys :: foralone %type b. [b]
        yys = reverse ys
 
 
-By using ``for<local> a`` quantifier we ask do not create a new type variable ``forall a``, 
+By using ``foralone %<local> a`` quantifier we ask do not create a new type variable ``forall a``, 
 but use already existed external type variable ``a``.
 
-1. ForTerm ``forterm`` quantifier pick type variable **by name** 
+1. Modifier ``%term`` says to pick type variable **by name** 
    lifted from nearest explicit **type-term** argument 
    (full or partial either ``@tyterm`` or ``(type a)`` or ``a`` in place which 
    is responsible from ``forall ->`` quantifier), not from **type**.
 
-2. ForType ``fortype`` quantifier pick type variable **by name** 
+2. Modifier ``%type`` says to pick ``forall`` type variable **by name** 
    from explicit only signature declaration from nearest sibling ones, 
    then from parent one ans so on, except siblings of top declaration signatures.
 
-3. ForArgm ``forargm`` quantifier pick type variable **by name** 
+3. Modifier ``%arg`` says to pick type variable **by name** 
    from ``class``, ``instance``, ``data``, ``type`` and ``newtype`` head type variable.
    
    In ``data``, ``type`` and ``newtype`` signatures is also allowed to write "old way" - 
@@ -183,30 +184,30 @@ but use already existed external type variable ``a``.
    But for future Backward Compatibility it is better to write first with head declaration order.
 
 
-Since ``forterm`` , ``fortype`` , ``forargm`` are quantifier by picking by name, 
+Since ``foralone %how a %how b %how c %how d.`` is a quantifier by picking by name, 
 they must use same **name** for type variable as external ones.
 
 Extension
 ~~~~~~~~~~~~
 
-Introduce a new extension ``LocalQuantifiers`` .
+Introduce a new extension ``ForAloneQuantifier`` .
 
-With ``LocalQuantifiers`` words ``forterm``, ``fortype``, ``forargm``  becomes keywords in types.
+With ``ForAloneQuantifier`` word ``foralone`` becomes a keyword in types.
 
 Syntax
 ~~~~~~
 
-Syntax for local quantifiers has a simple form.
+Syntax for foralone quantifier has a simple form.
 
 .. code:: abnf
 
   quantifiers ::= { quantifier }
 
   quantifier  ::=
-    | 'forall'  { tyvar } tyvar ( '.' | '->' )
-    | 'forargm' { tyvar } tyvar   '.'
-    | 'forterm' { tyvar } tyvar   '.'
-    | 'fortype' { tyvar } tyvar   '.'
+    | 'forall'   { tyvar }           tyvar          ( '.' | '->' )
+    | 'foralone' { modifier tyvar }  modifier tyvar   '.'
+
+where ``%argm``, ``%term`` and ``%type`` are modifiers.
 
 
 With ``-XModifiers``, introduce modifier syntax on forall type variables if we don't want to mix quantifiers
@@ -217,41 +218,41 @@ With ``-XModifiers``, introduce modifier syntax on forall type variables if we d
        | 'forall' { modifiers tyvar } modifiers tyvar ( '.' | '->' )
 
 
-where ``%forargm``, ``%forterm`` and ``%fortype`` are modifiers.
+where we could use 2 modifiers: ``%alone`` + local one ``%arg``, ``%term`` or ``%type`` modifiers.
 
 
-Every local quantifier is utilized by the Haskell renamer, so no changes are required for the Core Language.
+Every unique quantifier is utilized by the Haskell renamer, so no changes are required for the Core Language.
 
 Examples
 --------
 
-ForTerm Quantifier
-~~~~~~~~~~~~~~~~~~
+Local Term clarification
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-Examples uses ForTerm Quantifier
+Examples uses ForAone Quantifier with Term clarification
 ::
 
   -- Example 1
   data T = forall a. MkT [a] (a -> Int)
 			
   f :: T -> [Int]
-  f (MkT @a xs f) = let mf :: forterm a. [a] -> [Int]
+  f (MkT @a xs f) = let mf :: foralone %term a. [a] -> [Int]
                         mf = map f
                     in mf xs
 
   -- Example 2
   foo :: forall b. Maybe b -> ()
-  foo @a (_ :: forterm a. Maybe a) = ()
+  foo @a (_ :: foralone %term a. Maybe a) = ()
 
   -- Example 3
   bar :: forall b. Maybe b -> ()
-  bar (Just @a (_ :: forterm a. a)) = ()
+  bar (Just @a (_ :: foralone %term a. a)) = ()
 
   -- Example 4
   baz :: forall c. c ~ () -> ()
   baz @b () = ()
     where
-      () :: forterm b. b = ()
+      () :: foralone %term b. b = ()
 	  
   -- Example 5
   data T a where
@@ -263,143 +264,143 @@ Examples uses ForTerm Quantifier
 
   foo :: T (Int, Int) -> ()
   foo (MkT1 @(Int,Int))  = ()
-  foo (MkT2 @x)          = (() :: forterm x. x ~ Int => ())
-  foo (MkT3 @_ @x)       = (() :: forterm x. x ~ x => ())
-  foo (MkT4 @_ @x)       = (() :: forterm x. x ~ Int => ())
+  foo (MkT2 @x)          = (() :: foralone %term x. x ~ Int => ())
+  foo (MkT3 @_ @x)       = (() :: foralone %term x. x ~ x => ())
+  foo (MkT4 @_ @x)       = (() :: foralone %term x. x ~ Int => ())
 
   -- Example 6
   f :: Maybe Int -> Int
-  f (Nothing @a) = (4 :: forterm a. a)
-  f (Just @a _)  = (5 :: forterm a. a)
+  f (Nothing @a) = (4 :: foralone %term a. a)
+  f (Just @a _)  = (5 :: foralone %term a. a)
   
   -- Example 6
   g :: forall a. a -> a
-  g @a x = (x :: forterm a. a)
+  g @a x = (x :: foralone %term a. a)
 
   -- Example 7  
   
   -- accepted
-  f8 @a (x :: forterm a. a) = x 
+  f8 @a (x :: foralone %term a. a) = x 
 
   -- accepted
-  f2 @a True  x (y :: forterm a. a) = x
+  f2 @a True  x (y :: foralone %term a. a) = x
   f2 @_ False x y                   = y
 
   -- rejected: too confusing to have different type variable bindings
-  f3 @a True  x (y :: forterm a. a) = x
+  f3 @a True  x (y :: foralone %term a. a) = x
   f3    False x y                   = y
 
   -- accepted: the type signature allows us to do this
   f4 :: Bool -> a -> a -> a
-  f4 @a True  x (y :: forterm a. a) = x
+  f4 @a True  x (y :: foralone %term a. a) = x
   f4    False x y                   = y
 
   -- accepted
   f5 :: Bool -> forall a. a -> a -> a
-  f5 True @a x (y :: forterm a. a) = x
+  f5 True @a x (y :: foralone %term a. a) = x
   f5 False   x y                   = y
   
   -- Example 8
   id :: forall a. a -> a
-  id @t x = x :: forterm t. t
+  id @t x = x :: foralone %term t. t
 
-ForType Quantifier
+Local Type clarification
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Examples uses ForType Quantifier
+Examples uses ForAlone Quantifier with Type clarification
 ::
 
   -- Example 1
   f1 :: forall a. [a] -> [a]
-  f1 (x:xs) = xs ++ [ x :: fortype  a. a ]
+  f1 (x:xs) = xs ++ [ x :: foralone %type  a. a ]
   
   -- Example 2
   f2 :: forall a. [a] -> [a]
-  f2 (x:xs) = xs ++ [ x :: fortype a. a ]
+  f2 (x:xs) = xs ++ [ x :: foralone %type a. a ]
 
   -- Example 3
   f :: [a] -> [b] -> [(a, b)]  
-  f xs ys = zip (xs :: fortype a. [a]) yys 
+  f xs ys = zip (xs :: foralone %type a. [a]) yys 
      where
-       yys :: fortype b. [b]
+       yys :: foralone %type b. [b]
        yys = reverse ys
 
   -- Example 4
   f :: forall a b c. [a] -> [b] -> c -> ....
   f xs ys z = .....
     where
-      zzs :: fortype c. [c]
+      zzs :: foralone %type c. [c]
       zzs = [z, z, z] 
-      yys :: fortype b. [b]
+      yys :: foralone %type b. [b]
       yys = reverse ys
       x2 :: forall d. d -> ....
       x2 t = ...
         where
-          x3 :: fortype a. a
+          x3 :: for1 %type a. a
           x3 = head xs
-          xt :: fortype a d. (d, a)
+          xt :: foralone %type a %type d. (d, a)
           xt = (t, x3)
 
-ForArgm Quantifier
-~~~~~~~~~~~~~~~~~~
+Local Arg clarification
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-Examples uses ForArgm Quantifier
+Examples uses ForAlone Quantifier with Arg clarification
 ::
 
   -- Example 1
   class C a where
-    foo :: forargm a. forall b. b -> a -> (a, [b])
+    foo :: foralone %arg a. forall b. b -> a -> (a, [b])
 
   -- Example 2
   class Trans t where
-    lift :: forargm t. forall m. Monad m => m a -> (t m) a
+    lift :: foralone %arg t. forall m. Monad m => m a -> (t m) a
 	
   -- Example 3
   class C a where
-    op :: forargm a. [a] -> a
+    op :: foralone %arg a. [a] -> a
   
-    op xs = let ys:: forargm a. [a]
+    op xs = let ys:: for1 %arg a. [a]
                 ys = reverse xs
             in
             head ys
 			
   -- Example 4
   instance C b => C [b] where
-    op xs = reverse (head (xs :: forargm b. [[b]]))
+    op xs = reverse (head (xs :: foralone %arg b. [[b]]))
 
   -- Example 5	
   class D a where
-    m :: forargm a. a -> a
+    m :: foralone %arg a. a -> a
 
   instance Num a => D [a] where
-    m :: forargm a. [a] -> [a]
+    m :: foralone %arg a. [a] -> [a]
     m x = map (*2) x
 	
   -- Example 6
   class Collects e ce | ce -> e where
-    empty  :: forargm ce. ce
-    insert :: forargm e ce. e -> ce -> ce
-    member :: forargm e ce. e -> ce -> Bool
+    empty  :: foralone %arg ce. ce
+    insert :: foralone %arg e ce. e -> ce -> ce
+    member :: foralone %arg e ce. e -> ce -> Bool
 
 
-Example uses both ForArg and ForTerm Quantifiers:
+Example uses both Arg and Term Clarifications:
 ::
 
   type C :: forall i. (i -> i -> i) -> Constraint
   class C @i a where
-    p :: forargm a. forterm i. P a i
+    p :: foralone %arg a %term i. P a i
   
 New alternative way to write data declarations:
 ::
 
   -- Example 1
   data T a where
-    MkT1 :: forargm a.                        T a
-    MkT2 :: forargm a.                        T (a,a)
-    MkT3 :: forargm a. forall b.              T a
-    MkT4 :: forargm a. forall b. b ~ Int =>   T a
+    MkT1 :: foralone %arg a.                        T a
+    MkT2 :: foralone %arg a.                        T (a,a)
+    MkT3 :: foralone %arg a. forall b.              T a
+    MkT4 :: foralone %arg a. forall b. b ~ Int =>   T a
     -- with Modifiers extension
-    MkT5 :: forall c %forargm a b. b ~ c =>   T a
+    MkT5 :: forall c %alone %arg a b. b ~ c =>   T a
 
 
 Effect and Interactions
@@ -411,55 +412,53 @@ UnicodeSyntax
 ~~~~~~~~~~~~~~
 
 We wish to preserve ``∃`` (There Exists, U+2203) symbol for universal existential quantifier, 
-so it is proposed to add 3 symbols (``∃!`` + ``<something>``) to represent local quantifiers.
+so it is proposed to have 2 symbols ``∃!`` to represent unique quantifier ``foralone``.
 
-1. ``∃!@`` could represent ``forterm`` quantifier (There Exists, U+2203) + (Exclamation Mark, U+0021) + (Commercial At, U+0040).
-   
-   Maybe for not confusing with "at"-symbol it is better to allow (Fullwidth Commercial At, U+FF20) - ``∃!＠``
+Maybe also UnicodeSyntax affects modifiers:
 
-2. ``∃!≡`` could represent ``fortype`` quantifier (There Exists, U+2203) + (Exclamation Mark, U+0021) + (Identical To, U+2261).
+1. ``%＠`` could represent ``%term`` clarificator (Percent Sign, U+0025) + (Fullwidth Commercial At, U+FF20) ( NOT (Commercial At, U+0040) ).
 
-3. ``∃!≝`` could represent ``forargm`` quantifier (There Exists, U+2203) + (Exclamation Mark, U+0021) + (Equal to By Definition, U+2254).
+2. ``%≡`` could represent ``%type`` clarificator (Percent Sign, U+0025) + (Identical To, U+2261).
 
+3. ``%≝`` could represent ``%arg``  clarificator (Percent Sign, U+0025) + (Equal to By Definition, U+2254).
 
-Maybe also it affects modifiers - ``%∃!＠``, ``%∃!≡`` and ``%∃!≝``.
 
 Examples
 ::
 
   id :: ∀ a. a -> a
-  id @t x = x :: ∃!＠ t. t
+  id @t x = x :: ∃! %＠ t. t
 
   f1 :: ∀ a b. [a] -> [b] -> [(a, b)]
-  f1 @aa @bb xs ys  = zip (xs :: ∃!＠ aa. [aa]) yys
+  f1 @aa @bb xs ys  = zip (xs :: ∃! %＠ aa. [aa]) yys
      where
-       yys :: ∃!≡ b. [b]
+       yys :: ∃! %≡ b. [b]
        yys = reverse ys
 
   class D a where
-    m :: ∃!≝ a. a -> a
+    m :: ∃! %≝ a. a -> a
 
   instance Num a => D [a] where
-    m :: ∃!≝ a. [a] -> [a]
+    m :: ∃! %≝ a. [a] -> [a]
     m x = map (*2) x
 
 Modifiers
 ~~~~~~~~~
 
-We allow to write ``%forargm``, ``%forterm`` and ``%fortype`` (and ``%foreach``) as modifiers 
+We allow to write ``%alone`` + ``%arg``, ``%term`` or ``%type`` (or ``%each``) as modifiers 
 for ``forall`` type variable declarations near (before) type variable.
 
 ScopedTypeVariables
 ~~~~~~~~~~~~~~~~~~~
 
-``ScopedTypeVariables`` extension ignores local quantified variables.
+``ScopedTypeVariables`` extension ignores ``foralone``-quantified variables.
 
 But we could reuse part of searching algorithms from ``ScopedTypeVariables`` algorithms.
 
 ScopedTypeAbstractions
 ~~~~~~~~~~~~~~~~~~~~~~
 
-``TypeAbstractions`` extension ignores local quantified variables.
+``TypeAbstractions`` extension ignores ``foralone``-quantified variables.
 
 But it has build lexical scoping searching rules for unquantified type variables, 
 which it is better to segregate later into new ``JustTypeAbstractions`` and ``ScopeForTypeAbstractions`` extension.
@@ -471,7 +470,7 @@ which it is better to segregate later into new ``JustTypeAbstractions`` and ``Sc
 Visible ForAll and ForEach
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since local quantifiers just use already existing type variables, 
+Since ``foralone`` quantifier just use already existing type variables, 
 there is no need to be used as visible or as unerased quantifiers.
 
 NoImplicitForAll
@@ -488,7 +487,7 @@ This proposal is better to use with curried / nested quantifiers (foralls) featu
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs of ``LocalQuantifiers`` has medium difficulty.
+We expect the implementation and maintenance costs of ``ForAloneQuantifier`` has medium difficulty.
 
 
 Alternatives
@@ -502,7 +501,9 @@ Alternative keywords
 
 We could choose different keywords instead of proposed latin and unicode keywords.
 
-However, the template ``for<local>`` and ``∃<something>`` are welcomed.
+Alternative to latin name ``foralone`` could be chosen ``forone``, ``for1``, ``forunique``, ``forsingle``, ``foronly``, ...
+
+Alternative to unicode name ``∃!`` could be for example ``∃1``.
 
 
 Backward Compatibility
@@ -520,7 +521,7 @@ Is it Quantifier? Is it Existential? Is it Unique?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Some people think, that it it wrong naming: maybe it is more carefully 
-to call "local quantifier" as either "pseudo-quantifier" or "quasi-quantifier".
+to call foralone "quantifier" as either "pseudo-quantifier" or "quasi-quantifier".
 
 Also some people think, that is wrong naming: 
 either it call "existential quantifier" or "unique quantifier".
@@ -603,7 +604,7 @@ either it call "existential quantifier" or "unique quantifier".
 ForWhich
 ~~~~~~~~~
 
-It is unclear which local quantifier should be used in next example
+It is unclear which quantifier should be used in next example
 ::
 
     data Proxy a = P
