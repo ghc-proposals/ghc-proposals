@@ -84,11 +84,7 @@ Sure, we allow extra comma if and only if enumeration is not empty:
 - an extra leading comma must precede a "list" item
 - and extra trailing comma must follow an item
 
-And the extension forbids extra commas in empty cases 
-(and Deprecate commas for export and import empty lists, because it is currently allowed):
-::
 
-    import M(,)                -- forbidden, deprecated
 
     x  = [,]                   -- forbidden
     y  = [,,]                  -- forbidden
