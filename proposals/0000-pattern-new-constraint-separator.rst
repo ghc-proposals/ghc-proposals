@@ -43,6 +43,9 @@ to avoid any future conflicts ::
 
     pattern P :: SignReq then SignProv
 
+New separator helps to have more liberal and diversed Requested params, for example here:
+
+- Feature Request: `Support TypeAbstractions in PatternSynonyms <https://gitlab.haskell.org/ghc/ghc/-/work_items/27642>`__
 
 Proposed Change Specification
 -----------------------------
