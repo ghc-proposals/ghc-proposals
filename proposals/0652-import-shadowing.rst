@@ -120,8 +120,114 @@ Instead, we propose that when ``ImportShadowing`` is enabled,
 occurrence, then that is used, and the (B) case is only checked
 otherwise.
 
+Export lists
+~~~~~~~~~~~~
+
+References in a module's export specification are resolved in the same
+scope as that used for references in the module body, as per
+`Resolution of references in module body`_. For example if we have
+something like
+
+::
+
+ module A (foo) where
+
+ import M (foo)
+
+ foo = ...
+
+then the ``foo`` exported by ``A`` should be the one defined in
+``A``'s top-level.
+
+.. _module-reexports:
+
+Module reexports
+^^^^^^^^^^^^^^^^
+
+In an export list, `Paragraph 5 of Section 5.2 of the Haskell 2010 report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_
+specifies that the form ``module M`` names the set of all entities
+that are in scope with both an unqualified name ``e`` and a qualified
+name ``M.e``. Let's take the following example:
+
+::
+
+ module A (module M) where
+
+ import M (foo, wombat)
+ import N (foo)
+
+ foo = True
+
+*Without* ``ImportShadowing``, the ``module M`` exports ``M.foo``
+because that entity is in scope both as ``M.foo`` and with unqualified
+name ``foo``.  The fact that ``N.foo`` and ``A.foo`` are *also* in
+scope with unqualified name ``foo`` does not matter. *With*
+``ImportShadowing``, the locally defined ``foo`` shadows
+``M.foo``. But that shouldn't change the reexport of ``module M``.
+
+To keep ``ImportShadowing`` backwards-compatible, we change
+`Section 5.2
+<https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_
+to use a new property of being "available", that is unaffected by
+shadowing:
+
+* An entity is "available with unqualified name ``e``" if it is
+  defined in the current module, or imported unqualified by some
+  import.
+
+* An entity is "available with qualified name ``M.e``" if it is
+  defined in the current module ``M``, or imported qualified by some
+  import of ``M``.
+
+Using this definition, we change the meaning of a module reexport
+``module M`` to:
+
+* The form ``module M`` names the set of all entities that are
+  available with both an unqualified name ``e`` and a qualified name
+  ``M.e``.
+
+This way, when ``ImportShadowing`` is enabled, references to ``foo``
+inside the module ``A`` are resolved unambiguously to ``A.foo``, but
+``M.foo`` is still exported as part of the ``module M`` reexport, just
+as before.
+
+Conflicting exports
+^^^^^^^^^^^^^^^^^^^
+
+`Section 5.2 of the Haskell 2010 report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_
+says "The unqualified names of the entities exported by a module must
+all be distinct".  That condition remains unchanged with this
+proposal. For example consider
+
+::
+ 
+ module A( module M, module N, foo ) where
+
+ import M( foo, wombat )
+ import N( wombat )
+
+ foo = True
+
+Without ``ImportShadowing`` the export list would attempt to export
+``M.foo`` and ``A.foo``; and would report a conflict. It also attempts
+to export ``M.wombat`` and ``N.wombat`` and would again report a
+conflict (assuming they are distinct entities).
+
+With ``ImportShadowing``, this behaviour is unchanged: since ``M.foo``
+is still available as both ``M.foo`` and ``foo`` (as per
+:ref:`module-reexports` above), it is conflicting with the export of
+``A.foo``.
+
+Warnings
+~~~~~~~~
+
+Top-level bindings that shadow imported names should be regarding as
+shadowing bindings for the purposes of ``-Wname-shadowing``.
+
 Alternative perspective: desugaring into ``let`` bindings
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In Haskell 2010, all imported names and all top-level definitions in
 the current module together make up a single unified top-level
@@ -245,63 +351,6 @@ Whereas the ``ImportShadowing`` version is valid:
    in
      -- exports of Mod
      (fun1, fun2)
-
-Export lists
-~~~~~~~~~~~~
-
-References in a module's export specification are resolved in the same
-scope as that used for references in the module body, as per
-`Resolution of references in module body`_. For example if we have
-something like
-
-::
-
- module A (foo) where
-
- import M -- This exports "foo"
-
- foo = ...
-
-then the ``foo`` exported by ``A`` should be the one defined in
-``A``'s top-level.
-
-When modules are reexported wholesale, shadowing doesn't come into
-play, and so we keep the behaviour without this extension: the form
-``module M`` names the set of all entities that are in scope with both
-an unqualified name ``e`` and a qualified name ``M.e``. Example:
-
-::
-
- module A (module M) where
-
- import M -- this exports "foo"
-
- foo = ...
-
-Here, it is ``M.foo`` that is (re-)exported by ``A``, not ``A.foo``.
-
-If both ``module M`` and ``foo`` are exported, then that is a
-conflicting export error, and should be reported the same way as
-conflicts between exporting ``module M1`` and ``module M2`` without
-this extension. Example:
-
-::
-
- module A (foo, module M) where
-
- import M -- this exports "foo"
-
- foo = ...
-
-This should report a conflict between the export items ``foo``
-(resolving to ``A.foo``) and ``M.foo``.
-
-Warnings
-~~~~~~~~
-
-Top-level bindings that shadow imported names should be regarding as
-shadowing bindings for the purposes of ``-Wname-shadowing``.
-
      
 Examples
 --------
@@ -411,7 +460,7 @@ like:
 Unresolved Questions
 --------------------
 
-_None came up in the proposal discussion_
+*None came up in the proposal discussion*
 
 
 Implementation Plan
