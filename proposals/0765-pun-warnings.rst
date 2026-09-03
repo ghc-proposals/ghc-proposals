@@ -3,7 +3,7 @@ Pun warnings
 ============
 
 .. author:: Jaro Reinders, Artyom Kuznetsov
-.. date-accepted:: 
+.. date-accepted:: 2026-09-03
 .. ticket-url:: 
 .. implemented:: 
 .. highlight:: haskell
