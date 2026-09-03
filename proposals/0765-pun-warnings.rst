@@ -7,7 +7,7 @@ Pun warnings
 .. ticket-url:: 
 .. implemented:: 
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/765>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/765>`_.
 .. sectnum::
 .. contents::
 
