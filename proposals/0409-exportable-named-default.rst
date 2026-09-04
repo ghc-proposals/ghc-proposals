@@ -147,6 +147,10 @@ As a result, in any module each class has either one default declaration in scop
 imported one that subsumes all other imported ones), or none. This single default is used to resolve ambiguity, as
 described in the next subsection.
 
+In the above rules, a Haskell 98 default declaration ``default (...)`` is interpreted the same as
+`default Num (...)` (or a collection of named default declarations if ``-XOverloadedStrings`` or ``-XExtendedDefaultRules``
+are enabled, see :ref:`Effect and Interactions`).
+
 Note that a ``default`` declaration that repeats a type name more than once is perfectly valid, and sometimes may
 be necessary to resolve coflicts. For example, a module that imports two conflicting defaults
 
@@ -267,45 +271,78 @@ GHC already supports two extensions that modify the defaulting mechanism:
 ExtendedDefaultRules
 ~~~~~~~~~~~~~~~~~~~~
 
-The former is fully devoted to defaulting. Its effect is to extend the defaulting rules so that they apply not only to
-the class ``Num`` as specified by the language standard, but also to any class in the following list: ``Show``,
-``Eq``, ``Ord``, ``Foldable``, ``Traversable``, or any numeric class. This list is hard-coded and not
-user-extensible. Furthermore, the extension adds ``()`` and ``[]`` to the list of default types to try. If the present
-proposal is accepted, ``ExtendedDefaultRules`` could be reformulated as a set of actual ``default`` declarations
-brought into the scope::
+The ``ExtendedDefaultRules`` extension is fully devoted to defaulting. It changes
+the following:
 
-  default Show ((), Integer, Double)
-  default Eq ((), Integer, Double)
-  default Ord ((), Integer, Double)
+1. It relaxes the rules for defaulting. Instead of the Haskell98/Haskell2010 rules,
+   which stipulate that type variables for defaulting can only appear in constraints
+   of the form ``C v`` for a standard class ``C``, it simply ignores constraints
+   that are not of that form.
+
+2. It extends the set of classes that can have defaults to include ``Show``,
+   ``Eq``, ``Ord``, ``Foldable`` and ``Traversable``.
+   This list is hard-coded and not user-extensible.
+
+   This implies a relaxed criterion for typechecking a default declaration:
+   the user-supplied type must be an instance of (``Num`` or) at least one of
+   these classes
+
+3. The extension adds ``()`` and ``[]`` to the fallback list of default types to try.
+
+As far as this proposal is concerned, a Haskell98 default declaration in a
+module with ``-XExtendedDefaultRules`` should be interpreted as a set of named
+default declarations, e.g. ::
+
+  default (Int, [], Bool)
+
+becomes: ::
+
+  default Show (Int, Bool)
+  default Eq (Int, Bool)
+  default Ord (Int, Bool)
   default Foldable ([])
   default Traversable ([])
-  default Num ((), Integer, Double)
+  default Num (Int)
+
+This also applies to the fallback Haskell98 default declaration.
 
 OverloadedStrings
 ~~~~~~~~~~~~~~~~~
 
 The ``OverloadedStrings`` extension by itself causes many new ambiguities, much like the ambiguites caused by the
-overloaded numeric literals which were the original reason for ``default`` declarations in the first place. To rectify
-this problem, the extension tweaks the defaulting mechanism. To quote from the GHC manual:
+overloaded numeric literals which were the original reason for ``default`` declarations in the first place.
 
-- Each type in a ``default`` declaration must be an instance of ``Num`` or of ``IsString``.
+To rectify this problem, the extension extends the defaulting rules as follows:
 
-- If no ``default`` declaration is given, then it is just as if the module contained the declaration ``default
-  (Integer, Double, String)``.
+- It adds ``IsString`` to the set of classes which can have defaults. This
+  also means that any type that has an ``IsString`` instance is now permitted
+  in a default declaration.
 
-- The standard defaulting rule is extended thus: defaulting applies when all the unresolved constraints involve
-  standard classes or ``IsString``; and at least one is a numeric class or ``IsString``.
+- It adds ``String`` to the end of the list of types in the fallback default
+  declaration when there are no user-supplied ``default`` declarations.
 
-Once again, if the present proposal were adopted, the above rules could be expressed as an actual ``default``
-declaration::
+As far as this proposal is concerned, enabling ``-XOverloadedStrings`` simply
+means adding ``IsString`` to the set of classes to be considered in any
+Haskell98 default declaration. That is, the fallback default declaration has
+the same meaning as: ::
 
-   default IsString (Integer, Double, String)
+  default Num (Integer, Double)
+  default IsString (String)
+
+and a user-written declaration such as: ::
+
+  default (Int, Text, Double)
+
+has the same meaning as: ::
+
+  default Num (Int, Double)
+  default IsString (Text)
 
 OverloadedLists
 ~~~~~~~~~~~~~~~
 
-The ``OverloadedLists`` extension does not currently bring any defaulting rules into scope. There is no need to change
-that. Once this proposal is adopted, a library like ``Vector`` could export a rule::
+The ``OverloadedLists`` extension does not currently bring any defaulting rules into scope.
+There is no need to change that. With this proposal, a library like ``vector`` could export a rule::
 
   default IsList ([], Vector)
 
