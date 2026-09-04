@@ -1,0 +1,150 @@
+GHC2027
+=======
+
+.. author:: Adam Gundry
+.. date-accepted::
+.. ticket-url::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/TODO>`_.
+.. sectnum::
+.. contents::
+
+
+Motivation
+----------
+
+The `GHC20xx process proposal
+<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst#motivation>`_
+motivates why we feel the need for ``GHC20xx`` language editions in general.
+
+The first and second editions were ``GHC2021`` and ``GHC2024``, so tradition
+dictates we should have ``GHC2027``. Part of the
+`rationale for GHC2024 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0613-ghc2024.rst#why-ghc2024-in-the-first-place>`_
+was to establish a regular cadence:
+
+    a regular, not too slow cadence makes the whole process more
+    predictable, which I expect *improves* the perception of stability, in the
+    sense of delivering a stable flow of changes.
+
+
+Proposed Change Specification
+-----------------------------
+
+The ``GHC2027`` language extensions set comprises of all language extensions
+that ``GHC2024`` comprises
+(`official list <https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/control.html#extension-GHC2024>`_), plus the following:
+
+* TBC
+
+
+Why add BlockArguments?
+~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add CApiFFI?
+~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add DefaultSignatures?
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add DerivingVia?
+~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add ExtendedLiterals?
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add LazyFieldAnnotations?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add LexicalNegation?
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+Why add LiberalTypeSynonyms?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add MagicHash?
+~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add NumDecimals?
+~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why remove StarIsType?
+~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add TypeAbstractions?
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add UnboxedSums, UnboxedTuples, UnliftedDatatypes, UnlfitedFFITypes, UnliftedNewtypes?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why not add...?
+~~~~~~~~~~~~~~~
+
+Arnaud has `argued we should include extensions unless there is a reason not to
+<https://discourse.haskell.org/t/which-extensions-should-be-part-of-the-next-ghc20xx/14579/24>`_.
+In that spirit, this section lists extensions classified by why they are not
+included.
+
+TODO
+
+
+Backward Compatibility
+----------------------
+
+This proposal does not break existing code that specifies a language edition
+(e.g. by being compiled with Cabal).  Code that is compiled using GHC or GHCi
+directly may break due to the change of default language edition, but in that
+case the correct fix is for users to explicitly specify a language edition.
+
+
+Alternatives
+------------
+
+We could skip ``GHC2027`` and wait yet another year, or more. But that would
+slow down the pace of incorporating good extensions into the default language
+edition, for little benefit.
+
+
+Implementation Plan
+-------------------
+
+Support for ``GHC2027`` will be added in the next major release of GHC after
+this proposal is accepted.  This includes changing the default language edition.
