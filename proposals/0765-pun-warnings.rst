@@ -4,8 +4,8 @@ Pun warnings
 
 .. author:: Jaro Reinders, Artyom Kuznetsov
 .. date-accepted:: 2026-09-03
-.. ticket-url:: 
-.. implemented:: 
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/work_items/27774
+.. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/765>`_.
 .. sectnum::
