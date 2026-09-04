@@ -1,0 +1,386 @@
+GHC2027
+=======
+
+.. author:: Adam Gundry
+.. date-accepted::
+.. ticket-url::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/TODO>`_.
+.. sectnum::
+.. contents::
+
+
+Motivation
+----------
+
+The `GHC20xx process proposal
+<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst#motivation>`_
+motivates why we feel the need for ``GHC20xx`` language editions in general.
+
+The first and second editions were ``GHC2021`` and ``GHC2024``, so tradition
+dictates we should have ``GHC2027``. Part of the
+`rationale for GHC2024 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0613-ghc2024.rst#why-ghc2024-in-the-first-place>`_
+was to establish a regular cadence:
+
+    a regular, not too slow cadence makes the whole process more
+    predictable, which I expect *improves* the perception of stability, in the
+    sense of delivering a stable flow of changes.
+
+
+Proposed Change Specification
+-----------------------------
+
+The ``GHC2027`` language extensions set comprises of all language extensions
+that ``GHC2024`` comprises
+(`official list <https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/control.html#extension-GHC2024>`_), plus the following:
+
+* TBC
+
+
+Why add BlockArguments?
+~~~~~~~~~~~~~~~~~~~~~~~
+
+`BlockArguments`_ denoises common idioms, e.g. `when` for `forM` in do blocks, by not requiring
+parentheses or `$`. The resulting non-verbose syntax is arguably very Haskelly, and some
+people working with languages that have this already (Agda, PureScript, Lean) report being happy about it.
+
+*Backward compatibility*: No incompatibilities (according to the original proposal).
+
+(This was proposed for ``GHC2024`` but not accepted by the committee.)
+
+
+Why add CApiFFI?
+~~~~~~~~~~~~~~~~
+
+The `CAPiFFI`_ extension adds a ``capi`` foreign calling convention, which is
+`recommended as a best practice for foreign imports <https://www.haskell.org/ghc/blog/20210709-capi-usage.html>`_
+because it ensures the correct C calling convention is used for the foreign call.
+This extension is backwards-compatible and has no effect unless explicitly requested
+by the user, so there seems to be no good reason not to enable it by default.
+
+*Backward compatibility*: No incompatibilities
+
+
+Why add DefaultSignatures?
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``DefaultSignatures`` allows a class declaration to include a default method
+implementation whose constraints are more restrictive than the method type,
+requiring that those constraints are satisfied by instances where the method is
+not given an explicit implementation.  For example, this is useful when
+declaring a class whose default method implementation uses generic deriving: ::
+
+      class Enum a where
+        enum :: [a]
+        default enum :: (Generic a, GEnum (Rep a)) => [a]
+        enum = map to genum
+
+      instance Enum T
+      -- omitting `enum` method allowed provided `Generic T` and `GEnum (Rep T)` instances in scope
+
+*Backward compatibility*: No incompatibilities.  Since this extension applies
+only when the ``default`` keyword is used before the default method signature,
+it does not have any effect on existing code.
+
+
+Why add DerivingVia?
+~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add DeriveAnyClass?
+~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add ImpredicativeTypes?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add LazyFieldAnnotations?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add LexicalNegation?
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+`LexicalNegation`_ distinguishes between uses of the ``-`` operator as unary
+prefix negation vs binary infix subtraction by checking the surrounding
+whitespace.  This makes the syntax more consistent than in Haskell 2010.  For
+example it makes ``f -x`` parse as ``f (-x)`` rather than ``(-) f x``.
+
+*Backward compatibility*:
+Including `LexicalNegation`_ in ``GHC2027`` means that some existing programs
+may change meaning or fail to typecheck.  For example, without the extension
+enabled ``\x -> x -1 :: Num a => a -> a`` is the predecessor function, whereas
+with it enabled ``\x -> x -1 :: Num a => (a -> b) -> b`` is the function that
+applies its argument to ``-1``.
+
+
+Why add LiberalTypeSynonyms?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add MultilineStrings?
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`MultilineStrings`_ is a relatively new extension (since GHC 9.12.1) that allows
+for multiline string literals with `"""` delimiters.
+
+
+Why add NamedDefaults?
+~~~~~~~~~~~~~~~~~~~~~~
+
+TODO: `NamedDefaults`_
+
+
+Why add PatternSynonyms?
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add QualifiedDo?
+~~~~~~~~~~~~~~~~~~~~
+
+TODO: `QualifiedDo`_
+
+
+Why remove StarIsType?
+~~~~~~~~~~~~~~~~~~~~~~
+
+The `StarIsType`_ extension makes ``*`` usable in kind signatures as the kind of
+types. This conflicts with the ``TypeOperators`` extension (which is already
+part of ``GHC2024``), so it has been deprecated for some time.  Removing
+`StarIsType` from ``GHC2027`` will make the syntax more consistent and free up
+``*`` for use as a type-level operator.
+
+Removing ``StarIsType`` from ``GHC2027`` means some existing programs which use ``*``
+will be rejected and will need to switch to ``Type``.  However,
+in `proposal #143 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0143-remove-star-kind.rst>`_
+the switch was already agreed and a  deprecation warning ``-Wstar-is-type`` was introduced,
+which has been enabled by default since GHC 9.6.
+
+
+Why add TypeAbstractions and remove ScopedTypeVariables?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO
+
+
+Why add ExtendedLiterals, MagicHash, UnboxedSums, UnboxedTuples, UnliftedDatatypes, UnliftedFFITypes, UnliftedNewtypes?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These extensions are collectively useful for programming with low-level unboxed
+primitives:
+
+- ``MagicHash`` permits the use of ``#`` as a posfix identifier character,
+  which is needed to reference the names of some primitives, and adds literal
+  syntax such as ``3# :: Int#``. It does not bring anything into scope, so
+  users will still need to import primitives from a module such as
+  ``GHC.Exts``.
+
+- ``ExtendedLiterals`` permits use of ``#Type`` suffixes on numeric literals to
+  produced unboxed values, e.g. ``0xFF#Word8 :: Word8#``.
+
+- ``UnboxedSums`` and ``UnboxedTuples`` add syntax for unboxed anonymous tuple
+  and sum types.
+
+- ``UnliftedNewtypes`` and ``UnliftedDatatypes`` allow the declaration of
+  newtypes or datatypes with runtime representations other than lifted
+  ``Type``, e.g. so it is possible to use newtype wrappers around unboxed
+  primitive types.
+
+- ``UnliftedFFITypes`` extends the FFI to allow using certain unlifted unboxed
+  types in foreign imports.
+
+These extensions are all useful for low-level Haskell code that works with
+compiler primitives directly or is explicitly unboxed for performance reasons.
+They can generally be ignored by users who do not need such features.
+
+One downside to enabling these extensions is that they force the ``(#)``
+operator to be written with spaces in some cases.  For example, the expression
+``f 3#4`` is equivalent to ``(f 3) # 4`` under ``GHC2024``, but enabling
+``MagicHash`` turns it into ``f (3# :: Int#) 4``.  This will typically result in
+a type error, but could in principle lead to a silent behaviour change.
+
+Nevertheless, it seems worth enabling them all to move towards a more consistent
+single language that is capable of expressing low-level details, rather than
+requiring authors of low-level code to enable a bunch of extensions and
+potentially need to rewrite code that contains tight infix occurrences of ``#``
+when they do so.
+
+See also `proposal #691: LowLevelHaskell
+<https://github.com/ghc-proposals/ghc-proposals/pull/691>`_ and in particular
+`this alternative <https://github.com/AndreasPK/ghc-proposals/blob/implied-extended-literals/proposals/0000-implied-hash-extensions.rst#inclusion-in-language-ghc-editions>`_
+in which Andreas argues to enable many of these extensions in `GHC20xx`.
+(Andreas also includes ``PatternSynonyms`` in his ``LowLevelHaskell`` proposal,
+but ``PatternSynonyms`` is considered separately in the current proposal.)
+
+
+Proposed Non-Changes (Why not add...?)
+--------------------------------------
+
+Arnaud has `argued we should include extensions unless there is a reason not to
+<https://discourse.haskell.org/t/which-extensions-should-be-part-of-the-next-ghc20xx/14579/24>`_.
+In that spirit, this section lists extensions classified by why they are not
+included.
+
+- ``AllowAmbiguousTypes``: worsens type errors and it is usually better to use a visible `forall`,
+  or the (not yet implemented) proposal to mark individual declarations as ambiguous.
+
+- ``ApplicativeDo``: rather complex, `numerous bugs <https://gitlab.haskell.org/ghc/ghc/-/work_items?sort=updated_desc&state=all&label_name%5B%5D=ApplicativeDo&label_name%5B%5D=T%3A%3Abug&status=To%20do&first_page_size=100>`_.
+
+- ``Arrows``: `significant bugs including Core Lint errors <https://gitlab.haskell.org/ghc/ghc/-/work_items?sort=updated_desc&state=opened&label_name%5B%5D=Arrows&label_name%5B%5D=T%3A%3Abug&first_page_size=100>`_.
+
+- ``CPP``: requires running C preprocessor on source file, which should be opt-in.
+
+- ``DuplicateRecordFields``: complicates name resolution, somewhat experimental.
+
+- ``FunctionalDependencies``: significantly complicates type inference in the presence of MPTCs with overlapping instances;
+  GHC's current behaviour lacks a good specification (see `the GHC developer wiki page on functional dependencies <https://gitlab.haskell.org/ghc/ghc/-/wikis/Functional-dependencies-in-GHC>`_).
+
+- ``GHCForeignImportPrim``: intended for GHC-internal use only.
+
+- ``ImplicitParams``: TODO
+
+- ``IncoherentInstances``: usually a bad idea.
+
+- ``InterruptibleFFI``: rarely used and `does not work reliably <https://gitlab.haskell.org/ghc/ghc/-/work_items/27110>`_;
+  unclear if it can be fixed without changing the interface.
+
+- ``LinearTypes``: experimental.
+
+- ``MonadComprehensions``: generalises list comprehensions which can introduce type ambiguities; not widely used.
+
+- ``MultiWayIf``: new syntax but less general than ``\cases`` from ``LambdaCase``.
+
+- ``NegativeLiterals``: subsumed by ``LexicalNegation`` which is proposed for inclusion.
+
+- ``OrPatterns``: TODO
+
+- ``OverlappingInstances``: better to use per-instance pragmas instead.
+
+- ``OverloadedLabels``: TODO
+
+- ``OverloadedLists``: TODO
+
+- ``OverloadedRecordDot``: TODO
+
+- ``OverloadedRecordUpdate``: not yet fully implemented.
+
+- ``OverloadedStrings``: introduces type-checking ambiguities, exposes users to dangerous instances
+  such as the ``IsString ByteString`` instance which
+  `silently truncates non-8-bit characters <https://github.com/haskell/bytestring/issues/140>`_.
+
+- ``PackageImports``: TODO
+
+- ``ParallelListComp``: not widely used.
+
+- ``PartialTypeSignatures``: TODO
+
+- ``QualifiedStrings``: too new and experimental.
+
+- ``QuantifiedConstraints``: TODO
+
+- ``QuasiQuotes``: like Template Haskell, limits portability and causes significant performance regressions.
+
+- ``RebindableSyntax``: TODO
+
+- ``RecordWildCards``: TODO
+
+- ``RecursiveDo``: TODO
+
+- ``RequiredTypeArguments``: new and `not yet ready due to term variable capture <https://discourse.haskell.org/t/which-extensions-should-be-part-of-the-next-ghc20xx/14579/12>`_
+
+- ``StaticPointers``: infrequently used, significant bugs.
+
+- ``Strict``: massively breaking change due to making all bindings strict.
+
+- ``StrictData``: somewhat breaking change due to making all datatype fields strict.
+
+- ``StringInterpolation``: TODO
+
+- ``TemplateHaskell``: limits portability and causes significant performance regressions.
+
+- ``TemplateHaskellQuotes``: TODO
+
+- ``TransformListComp``: not widely used.
+
+- ``TypeData``: TODO
+
+- ``TypeFamilies``: significantly complicates type checking, stability risks due to constraint solver changes.
+
+- ``TypeFamilyDependencies``: see ``TypeFamilies``.
+
+- ``UndecidableInstances``: introduces non-termination at typechecking time.
+
+- ``UndecidableSuperClasses``: introduces non-termination at typechecking time.
+
+- ``UnicodeSyntax``: TODO
+
+- ``ViewPatterns``: TODO
+
+
+Why not add NumDecimals?
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `NumDecimals`_ extension interprets the use of fixed-point or scientific
+notation for integer literals via ``Num(fromInteger)``, rather than
+``Floating(fromRational)``.  For example, Haskell 2010 has ``1.2e6 :: Floating a
+=> a``, whereas under `NumDecimals`_ we have ``1.2e6 :: Num a => a``.  Note also
+that this changes ``1.0`` to be interpreted using ``Num`` rather than
+``Floating``.
+
+*Backward compatibility*: due to defaulting this may result in changes to
+inferred types, e.g. ``1.0`` will default to ``Integer`` rather than ``Double``
+if otherwise unconstrained. This may lead to silent behaviour changes (e.g.
+`show 1.0` will change from `"1.0"` to `"1"`).  The potential breakage here is
+rather severe, as programs will continue to typecheck but may do the wrong
+thing.
+
+(Also note that if a type has inconsistent ``Num`` and ``Floating`` instances,
+switching from ``fromRational`` to ``fromInteger`` may silently change
+behaviour. However such instances are arguably wrong in the first place!)
+
+
+Backward Compatibility
+----------------------
+
+This proposal does not break existing code that specifies a language edition
+(e.g. by being compiled with Cabal).  Code that is compiled using GHC or GHCi
+directly may break due to the change of default language edition, but in that
+case the correct fix is for users to explicitly specify a language edition.
+
+
+Alternatives
+------------
+
+We could skip ``GHC2027`` and wait yet another year, or more. But that would
+slow down the pace of incorporating good extensions into the default language
+edition, for little benefit.
+
+
+Implementation Plan
+-------------------
+
+Support for ``GHC2027`` will be added in the next major release of GHC after
+this proposal is accepted.  This includes changing the default language edition.
+
+
+.. _CApiFFI: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/ffi.html#the-capi-calling-convention
+.. _LexicalNegation: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/lexical_negation.html
+.. _MultilineStrings: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/multiline_strings.html
+.. _NamedDefaults: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/named_defaults.html
+.. _NumDecimals: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/num_decimals.html
+.. _QualifiedDo: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/qualified_do.html
+.. _StarIsType: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/poly_kinds.html#the-kind-type
