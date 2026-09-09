@@ -79,9 +79,7 @@ This proposal introduces the following syntactical changes to Haskell:
 
 1. Add language extension ``CommaTuples``
 
-2. Add language extension ``ExtraCommas`` which is just unification of 2 extensions: ``ExtraCommas = CommaTuples + ExtraNonTupleCommas``
-
-3. **Comma qualified tuples**: Allow to write ``data`` keyword after tuple close bracket `)` in tuples, 
+2. **Comma qualified tuples**: Allow to write ``data`` keyword after tuple close bracket `)` in tuples, 
    unboxed-tuples, constraint tuples and class context at terms and types.
 
    Comma qualified tuples (and tuple-like strucures) by meaning are indistinguishable 
@@ -106,21 +104,21 @@ This proposal introduces the following syntactical changes to Haskell:
        ::
   
          myTuple1 :: (Int, String, Char)
-         myTuple1 = (1, "2abc", 'd') data
+         myTuple1 =  (1, "2abc", 'd') data
 
          myTuple2 :: (, Int, Int, String, Char) data
-         myTuple2 = (42, 43, "xyz", 'w',) data
+         myTuple2 =  (42, 43, "xyz", 'w',) data
 
          myTuple3 :: (,Int, String, Char,) data
-         myTuple3 = (,1, "2abc", 'd') data
+         myTuple3 =  (,1, "2abc", 'd') data
 
-4. **Comma Qualified solo-tuples**: Allow to write solo-tuples 
+3. **Comma Qualified solo-tuples**: Allow to write solo-tuples 
    (and tuple-like strucures) with ``data`` keyword ::
 
        mySoloTuple :: (Int) data
        mySoloTuple  = (5,) data
 
-5. **Comma Qualified unit-tuples**: It is allowed to write unit-tuples 
+4. **Comma Qualified unit-tuples**: It is allowed to write unit-tuples 
    (and tuple-like strucures), but not in constructors 
    with ``data`` keyword, but without any extra comma::
 
@@ -142,7 +140,7 @@ Syntax for tuples, unboxed tuples, constraint tuples:
     ;-- kmax = if 'data' then 1 else 2
 
     atype ::= gtycon
-        | '(' ')'     'data'                                                      (comma empty tuple type)           ;-- new
+        | '(' ')' 'data'                                                          (comma empty tuple type)           ;-- new
         | '('  ',' type1 ',' … ',' typek [',']  ')'  'data'                       (comma tuple type, k ≥ 1)          ;-- upd
         | '('      type1 ',' … ',' typek (( ',' ')'  'data' )|( ')' ['data'] ))   (tuple type, k ≥ kmax)             ;-- new
         | '(#' '#)'   'data'                                                      (comma empty unboxed tuple type)   ;-- new
@@ -236,7 +234,7 @@ for supporting reading comma qualified tuples.
 Second, we update ``Data.Tuple`` to:
 ::
 
-    data Solo a = (a) data
+    pattern Solo a = (a) data
 	
     pattern MkSolo a = (a) data
 
@@ -360,7 +358,7 @@ Or alternative keywords could be chosen insted of ``data``, like ``qualified``.
 Alternative Rule for Commas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This proposal has synchronized rules with ``ExtraNonTupleCommas`` extension:
+This proposal has synchronized rules with ``ExtraCommas`` extension:
 
   We allow Leading Comma AND Trailing Comma (in single Structure) but WITHOUT Adjacent Commas.
 
@@ -391,7 +389,7 @@ Thanks to all contributors of `Add Support for Trailing and Leading Commas in Li
 Thanks to all contributors of `Allow Trailing Comma in List Constructor Syntaxs 
 <https://github.com/ghc-proposals/ghc-proposals/issues/653>`__.
 
-Thanks to all contributors of `Extra NonTuple Commas 
+Thanks to all contributors of `Extra Commas 
 <https://github.com/ghc-proposals/ghc-proposals/issues/748>`__.
 
 
