@@ -1,5 +1,5 @@
-Extra NonTuple Commas
-=========================================
+Extra Commas
+==============
 
 .. author:: Viktor WW
 .. date-accepted::
@@ -75,16 +75,22 @@ Proposed Change Specification
 
 This proposal introduces the following syntactical changes to Haskell.
 
-Add a new language extension ``ExtraNonTupleCommas`` which allows both leading
+Add a new language extension ``ExtraCommas`` which allows both leading
 and trailing commas in **any** syntactic construct in which enumeration with a comma as separator is allowed, 
 **except** those that looks like tuples: which are delimited by round parentheses in either terms or types (or constraints).
 
-Sure, we allow extra comma if and only if enumeration is not empty:
+Sure, we allow extra comma if and **only** if enumeration is not empty:
 
 - an extra leading comma must precede a "list" item
 - and extra trailing comma must follow an item
 
+And the extension forbids extra commas in empty cases
+(except ignoring the comma for export and import empty lists, 
+because this case is already allowed by ``Haskell2010``,
+but it could be deprecated any time later):
+::
 
+    import M(,)                -- allowed, but it could be deprecated
 
     x  = [,]                   -- forbidden
     y  = [,,]                  -- forbidden
@@ -129,7 +135,7 @@ More precisely, this extension allows both leading and trailing commas
 Syntax
 ~~~~~~~~~~~~
 
-The formal grammar changes for ``ExtraNonTupleCommas`` for trailing **and** leading commas **without** adjacent commas:
+The formal grammar changes for ``ExtraCommas`` for trailing **and** leading commas **without** adjacent commas:
 
 Trailing commas in module export and import lists (but not in sub-lists) 
 are already supported without this proposal.
@@ -371,7 +377,7 @@ Examples
 4. **Pragmas**
    ::
 
-     {-# LANGUAGE ExtraNonTupleCommas #-}
+     {-# LANGUAGE ExtraCommas #-}
      {-# LANGUAGE Haskell2010,
                   StandaloneTypeSignatures,
                   PatternSynonyms,
@@ -428,7 +434,7 @@ Tuple Sections
 This proposal purposefully dodges interacting with ``TupleSections`` extension.
 With ``TupleSection`` it is impossible to distinguish syntexically section ``(, a)`` from extra comma ``(, a)``.
 
-That's why this proposal do not cover tuples, unboxed tuples, constraint tuples, class context siplified and non-simplified.
+That's why this proposal DO NOT cover tuples, unboxed tuples, constraint tuples, class context siplified and non-simplified.
 
 Standalone Type Signatures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -451,7 +457,7 @@ See the example in the motivation.
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs of ``ExtraNonTupleCommas`` to have medium difficulty.
+We expect the implementation and maintenance costs of ``ExtrCommas`` to have medium difficulty.
 
 Second, all tooling which parses Haskell code will need to be updated to be compatible with the extended syntax.
 
@@ -487,6 +493,11 @@ However, the tension in the Haskell community was so high that a new attempt of 
 This proposal is an attempt to allow extra commas where everyone agrees to have them - 
 in all unordered structures (records, import and export "lists" and sublists, derivation and default clauses, multi-name signatures).
 
+Alternative name for extension
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The main alternative of short ``ExtraCommas`` name is more presice name, like ``ExtraNonTupleCommas``.
+
 Alternative rules for adding extra commas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -501,11 +512,13 @@ Alternative rules for adding extra commas
    The main benefit of the OR-version is that Cabal already supports this liberalisation.
 
    The main disadvantage of the OR-version is disallowing the mixing of code-styles. 
-   Also, the stricter version needs more complex parsing: ::
+   Also, the stricter version needs more complex parsing:
 
-      lead_OR_trail  ::= ( ',' subList ) | ( subList [','] )
+   .. code:: abnf
 
-      lead_AND_trail ::= [','] subList [',']
+      leadORtrail  ::= ( ',' subList ) | ( subList [','] )
+
+      leadANDtrail ::= [','] subList [',']
 
 3. The proposal suggests to allow extra commas **WITHOUT** adjacent commas, but the committee could choose instead to allow
    extra commas **WITH** adjacent commas. This would be more lenient.
@@ -524,11 +537,13 @@ Alternative rules for adding extra commas
    Haskell is known as a language with "pretty looking code".
 
    The main benefit of the WITH-version is the maximum liberalisation of using extra commas. 
-   Also, the more lenient version has almost the same parsing ::
+   Also, the more lenient version has almost the same parsing
 
-     lead_AND_trail_WITHOUT_adjacent ::=  [','] { elem_i ',' } elem_max [','] 
+   .. code:: abnf
 
-     lead_AND_trail_WITH_adjacent    ::=  {','} { elem_i ',' {','} } elem_max {','} 
+     leadANDtrailWITHOUTadjacent ::=  [','] { elem_i ',' } elem_max [','] 
+
+     leadANDtrailWITHadjacent    ::=  {','} { elem_i ',' {','} } elem_max {','} 
 
 
 Unresolved Questions
