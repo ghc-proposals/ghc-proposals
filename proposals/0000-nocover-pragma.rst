@@ -6,9 +6,7 @@ NOCOVER expression pragma
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/work_items/27870
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/770>`_.
 .. sectnum::
 .. contents::
 
