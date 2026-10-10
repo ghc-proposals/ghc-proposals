@@ -4,7 +4,7 @@ Non-punning list and tuple syntax
 .. author:: Richard Eisenberg (with much influence from collaborators)
 .. date-accepted:: 2022-03-24
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/21294
-.. implemented::
+.. implemented:: 9.10.1
 .. highlight:: haskell
 .. header::  This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/475>`_, an amendment at `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/603>`_, and a further amendment at `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/638>`_.
 .. contents::
