@@ -232,7 +232,7 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
   {-# INLINE interpolateRaw #-}
 
   interpolateValue :: Interpolate a => a -> Interpolation
-  interpolateValue x = unInterpolation (interpolateValueAt x)
+  interpolateValue x = Interpolation (interpolateValueAt x)
   {-# INLINE interpolateValue #-}
 
   interpolateAppend :: Interpolation -> Interpolation -> Interpolation
@@ -244,8 +244,14 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
   {-# INLINE interpolateEmpty #-}
 
   interpolateFinalize :: Interpolation -> String
-  interpolateFinalize = buildString . unInterpolate
+  interpolateFinalize x = buildString (unInterpolate x)
   {-# INLINE [1] interpolateFinalize #-}
+
+  {-# RULES
+      "fromString/interpolateFinalize/Interpolation"
+        forall (x :: Interpolation).
+        fromString (interpolateFinalize x) = x
+    #-}
 
   {----- StringBuilder -----}
 
@@ -267,6 +273,9 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
 
   class Interpolate a where
     interpolate :: a -> Interpolation
+
+  instance Interpolate Interpolation where
+    interpolate = id
 
   instance Interpolate String where
     interpolate = fromString
@@ -421,7 +430,7 @@ This proposal would be adding the following modules to ``ghc-experimental``, whi
       - Defines the ``Interpolate`` class and instances as written in :ref:`machinery`
     * - ``Data.String.Interpolate.Default.Experimental``
       - Defines the classes and functions for the default ``s"..."`` syntax, as written in :ref:`machinery`
-    * - ``Data.String.Interpolate.Builder.Experimental``
+    * - ``Data.String.Interpolate.Interpolation.Experimental``
       - Defines the default interpolator monomorphized for ``Interpolation`` for use with ``-XQualifiedStrings``
     * - ``Data.String.Interpolate.ShowS.Experimental``
       - Defines an interpolator useful for implementing ``showsPrec`` (See :ref:`shows-interpolator`)
@@ -478,19 +487,19 @@ Parsing
 Rewrite rules for performant interpolation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The default interpolator always builds via ``String``, even with ``-XOverloadedStrings`` enabled. String-like types like ``Text`` should define rewrite rules to make interpolation performant. There are two extension points needing rewrite rules:
+The default interpolator always builds via ``String``, even with ``-XOverloadedStrings`` enabled. A string-like type ``T`` (like ``Text``) should define rewrite rules to make interpolation performant. There are two intermediate expressions needing rewrite rules:
 
-* ``fromString (interpolateFinalize x)``
+* ``fromString @T (interpolateFinalize x)``:
 
-  * By default, finalizes with ``StringBuilder`` and lifts with ``fromString``
-  * A rewrite rule is needed to finalize with a more efficient builder for the string-like type
+  By default, unfolds to ``fromString @T (buildString (unInterpolation x @StringBuilder))``. Thus, every interpolation of target type ``T`` builds a ``String`` and converts it. Rewrite to ``T``'s counterpart of ``buildString :: StringBuilder -> String``; for example ``Text.Lazy.toStrict (Text.Builder.toLazyText (unInterpolation x @Text.Builder))``.
 
-* ``interpolateValueAt``
+  NB: Rewrite rules need to target the ``INLINE`` normal form of inlining ``fromString``, as instance methods typically inline before any rewrite rules. For example, for ``Text``, the LHS of the rewrite rule needs to be ``Text.pack (interpolateFinalize x)``.
 
-  * By default, invokes ``interpolate`` which ultimately requires converting through ``String``
-  * Rewrite rules are needed for each type that can be converted into the builder type more effeciently than through ``String``
+* ``interpolateValueAt``:
 
-Here are example rewrite rules ``Text`` might write:
+  By default, unfolds to ``unInterpolation (interpolate x) @TB`` for ``T``'s builder type ``TB``. Ultimately, the only way to implement a non-trivial ``interpolate`` is via ``fromString``, so this always converts through ``String``. A rewrite rule on ``interpolateValueAt`` allows converting a value type into a builder type directly without a ``String`` intermediary; e.g. ``interpolateValueAt @Int @Text.Builder = Text.Builder.decimal``.
+
+Here are example rewrite rules that the ``text`` package might provide:
 
 ::
 
@@ -505,8 +514,6 @@ Here are example rewrite rules ``Text`` might write:
       interpolateValueAt = Text.Builder.decimal
     #-}
 
-Note that the ``interpolateFinalize`` rule needs to target the implementation of ``fromString`` since it's typically inlined before rules fire.
-
 .. _writing-interpolate-instances:
 
 Writing Interpolate instances
@@ -520,7 +527,7 @@ Writing Interpolate instances
 
 * Using string interpolation syntax
 
-  * Requires ``-XOverloadedStrings`` or ``-XQualifiedStrings`` with ``Data.String.Interpolate.Builder.Experimental``
+  * Requires ``-XOverloadedStrings`` or ``-XQualifiedStrings`` with ``Data.String.Interpolate.Interpolation.Experimental``
 
 An example using string interpolation:
 
@@ -534,6 +541,7 @@ An example using string interpolation:
 
     instance Interpolate SrcLoc where
       interpolate SrcLoc{..} = s"${file}:${line}:${col}"
+      {-# INLINE interpolate #-}
 
 Because ``Interpolation`` is a rank-2 type, it keeps the interpolation polymorphic and doesn't incur any performance penalties roundtripping through ``String``.
 
@@ -631,7 +639,7 @@ Expansion-related Alternatives
 
   * Redundant with the rebindable functionality with ``-XQualifiedStrings``
 
-* Add an ``InterpolateBuilder`` type family to specify a builder type for the interpolator ``s`` and define ``interpolateFinalize`` with that type family
+* Add an ``InterpolationBuilder`` type family to specify a builder type for the interpolator ``s`` and define ``interpolateFinalize`` with that type family
 
   * Pro: eliminates the use of ``fromString`` for the final string (see Cost and Drawbacks)
   * Con: String interpolation requires adding a new instance; in the current proposal, anything with ``IsString`` gets string interpolation for free
