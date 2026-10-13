@@ -2,11 +2,11 @@ Extra Commas
 ==============
 
 .. author:: Viktor WW
-.. date-accepted::
+.. date-accepted:: 2026-10-13
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/748>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/748>`_.
 .. sectnum::
 .. contents::
 
