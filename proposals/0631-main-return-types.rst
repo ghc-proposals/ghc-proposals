@@ -37,8 +37,9 @@ When ``-XNoMeaningfulMainReturn`` (the default), GHC emits ``Wambiguous-main-ret
 if ``main`` has a type that doesn't unify with ``IO ()`` or ``IO Void``.
 
 When ``-XMeaningfulMainReturn``, GHC emits an error if ``main`` has a type that doesn't unify with
-``IO ()``, ``IO Void``, or ``IO ExitCode``. If ``main``'s type unifies with ``IO ExitCode``, the
-resulting program behaves as if its entrypoint were ``realMain = main >>= exitWith``.
+``IO ()``, ``IO Void``, or ``IO ExitCode``. If ``main``'s type unifies with ``IO ExitCode``, but
+not ``IO ()`` or ``IO Void``, the resulting program behaves as if its entrypoint were
+``realMain = main >>= exitWith``.
 
 ``-XMeaningfulMainReturn`` is intended to become the default in the next GHC language edition.
 
@@ -74,6 +75,16 @@ This is accepted as it is now.
    main = main
 
 This unifies with ``IO ()``, so it is accepted without warning.
+
+::
+
+   {-# LANGUAGE MeaningfulMainReturn #-}
+
+   main :: IO a
+   main = putStrLn "foo" *> pure (error "never reached")
+
+Unifies with ``IO ()``, so it is accepted without warning, and no
+``>>= exitWith`` is implied.
 
 ::
 
