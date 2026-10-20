@@ -3,7 +3,7 @@ Extra Commas
 
 .. author:: Viktor WW
 .. date-accepted:: 2026-10-13
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/work_items/28004
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/748>`_.
