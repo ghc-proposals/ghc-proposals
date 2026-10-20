@@ -140,7 +140,11 @@ Costs and Drawbacks
 -------------------
 
 The existing implementation for GHC is straightforward and should come at a
-very small maintenance cost over time.
+very small maintenance cost over time. Specifically, the existing
+infrastructure for expression-level pragmas (e.g. ``SCC``) can be reused, and
+changes in behaviour under coverage reporting are localised to
+``GHC.HsToCore.Ticks``, as demonstrated by the implementation linked at the end
+of this document.
 
 Programs directly working with the Haskell AST may need small updates to
 handle the new pragma.
