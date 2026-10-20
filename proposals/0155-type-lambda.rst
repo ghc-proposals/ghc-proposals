@@ -4,7 +4,7 @@ Binding type variables in lambda-expressions
 .. author:: Richard Eisenberg
 .. date-accepted:: 2019-05-09
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/17594
-.. implemented::
+.. implemented:: 9.10.1
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/155>`_.
 .. contents::

@@ -4,7 +4,7 @@ Pointer Rep
 .. author:: Andrew Martin
 .. date-accepted:: 2019-04-17
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/17526
-.. implemented::
+.. implemented:: 9.2.1
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/203>`_ and amended in `#301 <https://github.com/ghc-proposals/ghc-proposals/pull/301>`_.
 .. contents::
