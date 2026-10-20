@@ -167,6 +167,16 @@ have the benefit of keeping coverage exclusions local to the code in question,
 and are less convenient to use with existing tooling such as ``cabal test
 --enable-coverage``.
 
+Modifiers could also provide a mechanism for annotating expressions for
+coverage purposes. However, modifiers are not currently supported at the
+expression level. Adding that support would noticeably increase implementation
+complexity and require extending the existing syntax. Additionally, modifiers
+are expressed using types, so the required explanatory ``STRING`` would be
+represented as a type-level string, despite being only source-level
+documentation. Finally, other Haskell compilers would need to support modifier
+syntax to compile code using ``NOCOVER``, rather than simply ignoring an
+unsupported pragma as a comment.
+
 Implementation Plan
 -------------------
 
