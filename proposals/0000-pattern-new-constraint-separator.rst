@@ -29,8 +29,8 @@ Curried Constrains and Context in different places:
 - Feature Request: `Curried contexts in prefix GADT constructors <https://gitlab.haskell.org/ghc/ghc/-/work_items/27424>`__
 - Feature Request: `Refactor ConDeclGADT to allow nested foralls and contexts <https://gitlab.haskell.org/ghc/ghc/-/work_items/27425>`__
 
-They suggest to see, for example that ``C1 a => C2 a b => (C0 a, C0 b)`` is the same 
-as ``(C1 a, C2 a b, C0 a, C0 b)``
+They suggest to see, for example that ``C1 a => C2 a b => (C3 a, C3 b)`` is the same 
+as ``(C1 a, C2 a b, C3 a, C3 b)``
 
 This syntax is very universal and curried and it looks promising.
 
@@ -84,15 +84,15 @@ The formal grammar changes for assigned a pattern type signatures:
 
 .. code:: abnf
 
-    topdecl ::= 'type' simpletype '=' type                           (simple type declaration)
-        | 'pattern' pats '::' type ['where' pdecls]                      (pattern declaration)   --; upd
-        | 'pattern' pats '::' signreq 'then' signprov ['where' pdecls]   (pattern declaration)   --; new
+    topdecl ::= 'type' simpletype '=' type                              (simple type declaration)
+        | 'pattern' pats '::' [signreq 'then'] signprov ['where' pdecls]    (pattern declaration)   --; upd
         | ……
 
-    signreq  ::= ()                                              --; new
-        | { {forquantiferes} {context '=>'} } [type]             --; new
+    signreq  ::= [foralls] [context '=>'] type         --; new
+        | [foralls] context                            --; new
+        | foralls                                      --; new
 
-    signprov ::= { {forquantiferes} {context '=>'} } type        --; new
+    signprov ::= [foralls] [context '=>'] type         --; upd
 
 Examples
 --------
