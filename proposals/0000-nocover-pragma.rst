@@ -164,12 +164,18 @@ GHC versions, but emit an ``Unrecognised pragma: NOCOVER`` warning under
 Alternatives
 ------------
 
+HPC overlays
+~~~~~~~~~~~~
+
 HPC provides an overlay mechanism which can also be used to exclude certain
 expressions from coverage reporting. Using overlays is more brittle than this
 proposal, as it relies on specific source span locations. Overlays also don't
 have the benefit of keeping coverage exclusions local to the code in question,
 and are less convenient to use with existing tooling such as ``cabal test
 --enable-coverage``.
+
+Modifiers
+~~~~~~~~~
 
 Modifiers could also provide a mechanism for annotating expressions for
 coverage purposes. However, modifiers are not currently supported at the
@@ -180,6 +186,79 @@ represented as a type-level string, despite being only source-level
 documentation. Finally, other Haskell compilers would need to support modifier
 syntax to compile code using ``NOCOVER``, rather than simply ignoring an
 unsupported pragma as a comment.
+
+Magic functions
+~~~~~~~~~~~~~~~
+
+Special magic functions, such as ``GHC.Exts``'s ``inline``, ``noinline``,
+``lazy``, etc. could also provide a similar annotation mechanism.
+
+Let's assume a magic function ``noCover :: a -> a``, which is semantically the
+``id`` function, but suppresses coverage for its argument expression, and is
+provided by ``GHC.Exts``. This approach has a number of potential downsides:
+
+#. Lack of explanation for its use
+
+   The run-time effect of evaluating an expression for which coverage should be
+   suppressed and the explanation for why coverage should be suppressed for that
+   expression are different concepts.
+
+   User's of ``noCover`` could of course provide a separate explanation with a
+   regular source comment, but ``NOCOVER`` explicitly encourages this good
+   practice.
+
+   Of course, ``noCover`` could instead be of type ``String -> a -> a`` to still
+   require an explanation. However, this would lead to other complications
+   described in :ref:`Unnecessary magic <nocover-magic>`, especially when
+   considering partial application and higher-order use.
+
+#. Compatibility with other compilers
+
+   Other Haskell compilers, such as MicroHS, can ignore unsupported pragmas as
+   comments. In contrast, a magic ``noCover`` function provided by ``GHC.Exts``
+   would not be available on those compilers.
+
+   A compatibility library could provide an ordinary identity function as a
+   fallback, but this would introduce an additional dependency or require
+   compiler-specific conditional compilation.
+
+#. Compatibility with earlier versions of GHC
+
+   As described in `Backward Compatibility`_, code using ``NOCOVER`` will work
+   unmodified on versions of GHC which don't support that pragma yet. This is
+   not true for ``noCover``, which would require conditional compilation or a
+   compatibility library providing a fallback implementation.
+
+   .. _nocover-magic:
+
+#. Unnecessary magic
+
+   While ``noCover`` would behave as an ordinary identity function at run-time,
+   its effect on coverage would depend on recognising its applications. For
+   example, introducing an alias such as ``nC = noCover`` could cause
+   ``nC expr`` to behave differently from ``noCover expr`` with respect to
+   coverage, despite being semantically equivalent expressions.
+
+   Similar complications arise with partial applications and higher-order uses.
+   Supporting these cases consistently would further increase implementation
+   complexity, while limiting coverage suppression to directly recognisable
+   applications would mean that otherwise harmless refactorings could change
+   coverage reporting.
+
+   In contrast, ``NOCOVER`` explicitly annotates the source expression for
+   which coverage should be suppressed, following existing conventions for
+   debugging and instrumentation annotations such as ``SCC``.
+
+#. Hard to generalise to other coverage areas
+
+   While this proposal purposefully limits itself to expression coverage, a
+   ``NOCOVER`` pragma could easily be extended to top-level declarations, class
+   instances, and other non-expression contexts. For example, ::
+
+     {-# NOCOVER serviceHandler "CI doesn't run under the Windows Service Control Manager" #-}
+     serviceHandler = ...
+
+   The ``noCover`` approach does not easily generalise to those use-cases.
 
 Implementation Plan
 -------------------
