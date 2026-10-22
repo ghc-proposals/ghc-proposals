@@ -260,6 +260,32 @@ provided by ``GHC.Exts``. This approach has a number of potential downsides:
 
    The ``noCover`` approach does not easily generalise to those use-cases.
 
+``NOCOVER`` without a required explanatory string
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+While the explanation for why an expression should have coverage reporting
+suppressed and its run-time behaviour when evaluated are separate concerns, in
+some cases author might chose to have both contain effectively the same
+information, e.g. ::
+
+  {-# NOCOVER "unreachable" #-} error "unreachable"
+
+For cases like this, the repetition might be considered unnecessary noise by
+some authors. This could be avoided by making the explanatory string accepted
+by ``NOCOVER`` optional, turning the above into this: ::
+
+  {-# NOCOVER #-} error "unreachable"
+
+However, the explanation for excluding an expression from coverage will often
+contain information that isn't relevant to its run-time behaviour, making such
+repetition unnecessary in those cases.
+
+Making a required explanatory string optional in the future would be
+straightforward, while making an optional string mandatory would break existing
+code. This proposal therefore prefers to keep it required for now, and
+reconsider this if experience with real-world use shows that the requirement is
+unnecessarily burdensome.
+
 Implementation Plan
 -------------------
 
