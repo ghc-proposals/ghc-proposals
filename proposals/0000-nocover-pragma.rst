@@ -103,6 +103,27 @@ Examples
 
 ::
 
+  nextPrime :: Natural -> Natural
+  nextPrime x = fromMaybe
+                  ({-# NOCOVER "There's always a larger prime" #-} 0)
+                  (find isPrime [x+1..])
+
+  import Data.Proxy
+  import Data.Typeable
+  eventType :: TypeRep
+  eventType = typeRep
+                ({-# NOCOVER "typeRep does not evaluate its proxy argument" #-}
+                 (Proxy :: Proxy Event))
+
+  -- Adapted from https://github.com/haskell/cabal/blob/master/Cabal/src/Distribution/Simple/Build/PathsModule.hs
+  (zBindir, zLibdir, ...)
+  | relocatable lbi = ...
+  | absolute        = ...
+  | isWindows       = ...
+  | otherwise       =
+      {-# NOCOVER "On non-Windows platforms absolute is always True" #-}
+      error "panic! generatePathsModule: should never happen"
+
   -- rejected: expression pragmas are not valid at this position
   f = 1 / {-# NOCOVER "foo" #-} 2 / 2
 
