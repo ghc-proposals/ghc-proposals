@@ -43,7 +43,7 @@ is using "input types" for ``forall`` quantifier.
     idA :: forall a. a -> a
 	idA @a x = x
 
-This proposal propose similar feature: using construction ``therefore in``as "output types" for ``exists`` quantifier.
+This proposal propose similar feature: using construction ``therefore in`` as "output types" for ``exists`` quantifier.
 
 Exists 3 kinds of Output Existentials, and this proposal covers all 3 cases:
 
