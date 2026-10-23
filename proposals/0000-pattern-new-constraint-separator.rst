@@ -186,13 +186,13 @@ Why? **Pro**: it looks mathematical. **Cons**: it already used as operator in se
 
 - Use different *operator* for separator, for example:
 
-  1. Use ``|--`` and same unicode ``⊢`` for separator. **Pro**: it looks mathematical. 
+  #. Use ``|--`` and same unicode ``⊢`` for separator. **Pro**: it looks mathematical. 
      **Cons**: 3 letter insted of 2.
 
-  2. Use ``||-`` and unicode ``⊩`` (Forces, U+22A9) for separator. **Pro**: it looks mathematical. 
+  #. Use ``||-`` and unicode ``⊩`` (Forces, U+22A9) for separator. **Pro**: it looks mathematical. 
      **Cons**: 3 letter insted of 2.
 
-  3. Use ``=>=>`` for separator. **Pro**: Similar to already used one. 
+  #. Use ``=>=>`` for separator. **Pro**: Similar to already used one. 
      **Cons**: 4 letter insted of 2. Unclear which unicode could be used. Do not looks mathematical.
 
 
