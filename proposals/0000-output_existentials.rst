@@ -1,6 +1,6 @@
-===================
-Output Existentials
-===================
+====================
+Dynamic Existentials
+====================
 
 .. author:: Viktor WW
 .. date-accepted::
@@ -11,7 +11,7 @@ Output Existentials
 .. sectnum::
 .. contents::
 
-This proposal introduces output existentials into GHC
+This proposal introduces dynamic existentials into GHC
 
 Motivation
 ----------
@@ -33,7 +33,8 @@ Unfortunately we cannot unbox it inner type. ::
 
 One of the great architectural achievements of Haskell language 
 is using "input types" for ``forall`` quantifier 
-(it appears in LHS part of equation only)
+(it appears in LHS part of equation only) 
+and they are known during a compile time
 ::
 
     idS :: String -> String
@@ -43,11 +44,12 @@ is using "input types" for ``forall`` quantifier
 	idA @a x = x
 
 This proposal propose similar feature: using expression construction ``therefore in`` 
-after some evaluation in RHS part of equation as "output types" for ``exists`` quantifier.
+after some evaluation in RHS part of equation as "output types" for ``exists`` quantifier
+and they are known during a runtime.
 
-Output Existentials do not cover all variety of possible Existentials types, 
+Dynamic Existentials do not cover all variety of possible Existentials types, 
 but they represents a significant part of them.
-Exists 4 kinds of Output Existentials, and this proposal covers all 4 cases:
+There are exists 4 kinds of Dynamic Existentials, and this proposal covers all 4 cases:
 
 - **Quasi Existentials**: special type which is known how to monotyped during a compile time
   and it is known during a compile time
@@ -109,13 +111,13 @@ Proposed Change Specification
 Extension
 ~~~~~~~~~
 
-Introduce a new extension ``OutputExistentials``.
+Introduce a new extension ``DynamicExistentials``.
 
-With ``OutputExistentials``, ``exists`` is a keyword in both types and terms.
+With ``DynamicExistentials``, ``exists`` is a keyword in both types and terms.
 
-With ``OutputExistentials``, ``therefore`` is a keyword in terms.
+With ``DynamicExistentials``, ``therefore`` is a keyword in terms.
 
-``OutputExistentials`` implies ``ExistentialQuantification``, ``TypeAbstractions`` and ``RankNTypes`` extensions.
+``DynamicExistentials`` implies ``ExistentialQuantification``, ``TypeAbstractions`` and ``RankNTypes`` extensions.
 
 Syntax
 ~~~~~~
@@ -253,7 +255,7 @@ Examples
 Filter Nat-Vectors
 ~~~~~~~~~~~~~~~~~~
 
-We could use output existential types for Vectors ::
+We could use dynamic existential types for Vectors ::
 
   data Nat = Zero | Succ Nat
 
@@ -317,7 +319,7 @@ UnicodeSyntax
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs of ``OutputExistentials`` has medium difficulty.
+We expect the implementation and maintenance costs of ``DynamicExistentials`` has medium difficulty.
 
 
 Backward Compatibility
