@@ -179,7 +179,8 @@ Alternative keywords
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 We could choose differen separator instead of proposed ``|-`` and unicode ``⊢`` keywords.
-Why? **Pro**: it looks mathematical. **Cons**: it already used as operator in several packages
+Why? **Pro**: it looks mathematical. **Cons**: it already used as operator in several packages:
+*uniplate*, *numhask*, *sbv*, *tidal*, *tidal-core*, *one-liner*.
 
 - Use a *word* for separator, for example ``then``. **Pro**: it is already a keyword for terms, looks mathematical. 
   **Cons**: it would be a second word as keyword in types
@@ -190,7 +191,8 @@ Why? **Pro**: it looks mathematical. **Cons**: it already used as operator in se
      **Cons**: 3 letter insted of 2.
 
   #. Use ``||-`` and unicode ``⊩`` (Forces, U+22A9) for separator. **Pro**: it looks mathematical. 
-     **Cons**: 3 letter insted of 2.
+     **Cons**: 3 letter insted of 2. It already used as operator in several packages:
+     *tidal*, *tidal-core*.
 
   #. Use ``=>=>`` for separator. **Pro**: Similar to already used one. 
      **Cons**: 4 letter insted of 2. Unclear which unicode could be used. Do not looks mathematical.
