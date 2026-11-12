@@ -17,9 +17,9 @@ with ``%Strict`` (or ``%Lazy`` ) modifier in signatures before ``->`` .
 Motivation
 ----------
 
-Reading the signatures often has very good understanding what the function do.
-But sometimes it consists not enough information and we must add commentaries
-to explain what the difference.
+Reading the signature often has very good understanding what the function do.
+But sometimes it does not provide enough information, 
+and we must add commentary to explain the difference.
 ::
 
     -- Left-associative fold of a structure, lazy in the accumulator.
@@ -51,10 +51,10 @@ Proposed Change Specification
 
 Introduce a new extension ``StrictSignatures``.
 
-With this extension we allow modifier ``%Strict`` or ``%Lazy`` 
+With this extension we allow a modifier ``%Strict`` or ``%Lazy`` 
 in signatures before ``->`` to be valid
-regardless on real strictness or laziness of the argument.
-After checking the modifier is fully ignored.
+regardless of the real strictness or laziness of the argument.
+After checking, the modifier is fully ignored.
 
 	
 Examples
