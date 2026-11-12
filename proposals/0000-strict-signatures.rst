@@ -64,7 +64,7 @@ Several examples with new syntax
 ::
 
     foo :: a %Strict -> a %Lazy -> a
-	foo !x y = ... some-expr
+    foo !x y = ... some-expr
 	
     strict :: MonadIO io => Shell ByteString %Strict -> io ByteString
 
