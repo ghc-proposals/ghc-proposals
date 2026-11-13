@@ -1,5 +1,5 @@
 Decorated Signatures
-====================
+======================
 
 .. author:: Viktor WW
 .. date-accepted:: 
