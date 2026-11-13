@@ -10,40 +10,42 @@ Decorated Signatures
 .. sectnum::
 .. contents::
 
-We propose to allow to manually mark arguments 
-with decorators-modifiers in signatures before ``->`` .
+We propose to allow to mark manually arguments
+with decorators-modifiers in signatures before ``->`` 
+for documentation purpose.
 
 
 Motivation
 ----------
 
 Reading the signature often has very good understanding what the function do.
-But sometimes it does not provide enough information, 
+But sometimes it does not provide enough information,
 and we must add commentary to explain the difference.
 ::
 
     -- Left-associative fold of a structure, lazy in the accumulator.
     foldl  :: Foldable t => (b -> a -> b) -> b -> t a -> b
 
-    -- Left-associative fold of a structure but with strict application of the operator.	
-    foldl' :: Foldable t => (b -> a -> b) -> b -> t a -> b 
+    -- Left-associative fold of a structure but with strict application of the operator.
+    foldl' :: Foldable t => (b -> a -> b) -> b -> t a -> b
 
 Is any difference between these 2 function?	Strictness!
 So let's mark "accumulator" as strict with a modifier just for documentation purpose!
 ::
 
     -- now
-    foldl' :: Foldable t => (b -> a -> b) -> b -> t a -> b 
+    foldl' :: Foldable t => (b -> a -> b) -> b -> t a -> b
 	
     -- new syntax
-    foldl' :: Foldable t => (b -> a -> b) -> b -> t a %Strict -> b 
+    foldl' :: Foldable t => (b -> a -> b) -> b -> t a %Strict -> b
 
 
-So, with new syntax we could understand the difference just from the signature ::
+So, with new syntax we could understand the difference just from the signature
+::
 
     foldl  :: Foldable t => (b -> a -> b) -> b -> t a %Lazy -> b
 
-    foldl' :: Foldable t => (b -> a -> b) -> b -> t a %Strict -> b 
+    foldl' :: Foldable t => (b -> a -> b) -> b -> t a %Strict -> b
 
 
 Proposed Change Specification
@@ -51,10 +53,13 @@ Proposed Change Specification
 
 Introduce a new extension ``DecoratedSignatures``.
 
-With this extension we allow one or some decorators-modifiers 
-in signatures before ``->`` to be valid
+With this extension we allow to mark manually
+one or more decorators-modifiers
+in signature before ``->`` to be valid
 regardless of the real role of the argument.
+
 After checking, the modifier is fully ignored.
+They are needed just for documentation purpose.
 
 Next decorators-modifiers are allowed:
 
@@ -96,6 +101,7 @@ Next decorators-modifiers are allowed:
   - ``%LastlNotFound``
   - ``%UntilFound``
   - ``%AfterFound``
+
 
 Examples
 --------
@@ -143,6 +149,10 @@ Several examples with Condition decorators
 
     dropWhile :: (a -> Bool) %AfterFound -> [a] -> [a] 
 
+Example with several decorators
+::
+
+    foldl' :: Foldable t => (b -> a -> b) -> b -> t a %Strict %O_n %Finite %Left2R -> b
 
 
 Effect and Interactions
