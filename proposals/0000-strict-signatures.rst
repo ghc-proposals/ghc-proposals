@@ -1,5 +1,5 @@
-Decorative Signatures
-=====================
+Decorated Signatures
+====================
 
 .. author:: Viktor WW
 .. date-accepted:: 
@@ -49,7 +49,7 @@ So, with new syntax we could understand the difference just from the signature :
 Proposed Change Specification
 -----------------------------
 
-Introduce a new extension ``DecorativeSignatures``.
+Introduce a new extension ``DecoratedSignatures``.
 
 With this extension we allow one or some decorators-modifiers 
 in signatures before ``->`` to be valid
