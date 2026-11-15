@@ -1,5 +1,5 @@
 Kinded Forall
-=============
+==============
 
 .. author:: Viktor WW
 .. date-accepted:: 
@@ -102,7 +102,7 @@ Effect and Interactions
 
 Extension implies ``KindSignatures`` extension.
 
-It is also has dependeces with ``TypeHoles`` and ``Partial Signatures`` .
+It is also has dependeces with ``TypeHoles`` and ``PartialSignatures`` .
 
 
 Costs and Drawbacks
