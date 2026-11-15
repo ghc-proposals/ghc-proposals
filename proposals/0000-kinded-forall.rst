@@ -74,13 +74,13 @@ The formal grammar changes for multi-kinded ``forall``:
 
 .. code:: abnf
 
-    foralls ::= 'forall' tv_bndrs [ '::' ktype ] '.'      ;-- upd
-              | 'forall' tv_bndrs '->'
-              | ;-- empty
+    foralls ::= 'forall' tvbndrs [ '::' ktype ] '.'      ;-- upd
+              | 'forall' tvbndrs '->'
+              | <empty>
 
-    tv_bndrs ::= tv_bndr1 { tv_bndr1 }
+    tvbndrs ::= tvbndr1 { tv_bndr1 }
 	
-    tv_bndr1 ::= tyvar
+    tvbndr1 ::= tyvar
               | '(' tyvar '::' ktype ')'
 	
 	
@@ -101,6 +101,8 @@ Effect and Interactions
 -----------------------
 
 Extension implies ``KindSignatures`` extension.
+
+It is also has dependeces with ``TypeHoles`` and ``Partial Signatures`` .
 
 
 Costs and Drawbacks
