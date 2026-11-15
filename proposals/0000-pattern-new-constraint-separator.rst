@@ -1,5 +1,5 @@
 New requested separator for Pattern Synonyms
-===============================================
+================================================
 
 .. author:: Viktor WW
 .. date-accepted:: 
