@@ -1,5 +1,5 @@
-New constraint separator for Pattern Synonyms
-=============================================
+New requested separator for Pattern Synonyms
+===============================================
 
 .. author:: Viktor WW
 .. date-accepted:: 
@@ -10,7 +10,7 @@ New constraint separator for Pattern Synonyms
 .. sectnum::
 .. contents::
 
-We change the inner constraint separator from ``=>`` to ``|-`` in ``PatternSynonyms`` 
+We change the inner requested separator from ``=>`` to ``|-`` in ``PatternSynonyms`` 
 to avoid any conflicts with curried constraint syntax ::
 
     pattern P :: CReq |- CProv => t1 -> t2 -> ... -> tN -> t
@@ -30,9 +30,9 @@ Curried Constrains and Context in different places:
 - Feature Request: `Refactor ConDeclGADT to allow nested foralls and contexts <https://gitlab.haskell.org/ghc/ghc/-/work_items/27425>`__
 - Feature Request: `Support TypeAbstractions in PatternSynonyms <https://gitlab.haskell.org/ghc/ghc/-/work_items/27642>`__
 
-They suggest to see, for example that ``C1 a => C2 a b => (C3 a, C3 b)`` is the same 
+They suggest to see, for example that several constraints ``C1 a => C2 a b => (C3 a, C3 b)`` are the same 
 as ``C1 a => (C2 a b, C3 a, C3 b)``
-and is the same as ``(C1 a, C2 a b, C3 a, C3 b)``
+and are the same as ``(C1 a, C2 a b, C3 a, C3 b)``
 
 
 This syntax is very universal and curried and it looks promising.
@@ -53,7 +53,7 @@ has constraint or not:
 
     pattern P2 :: () => (C1 a, ...) => t1 -> t2 -> ... -> tN -> t
 
-Third, current separator is not flexible enough. 
+Third, current requested separator is not flexible enough. 
 Currently it is not supported visible forall in the Req/Prov parts of the pattern signature at all.
 Function arguments in the Req part is also do not supported. 
 Currently all function arguments are in the Prov part.
@@ -63,7 +63,7 @@ In general, the Req/Prov split shouldn't be solely about constraints.
 Proposed Change Specification
 -----------------------------
 
-Main idea is: to have much simpler and more flexible syntax with ``|-`` inner separator 
+Main idea is: to have much simpler and more flexible syntax with ``|-`` requested separator 
 ::
 
     pattern P :: SignProv
@@ -103,7 +103,7 @@ The formal grammar changes for assigned a pattern type signatures:
 Examples
 --------
 
-An example with requested constraint
+An example with requested constraint in pattern
 ::
 
     data T a where
@@ -141,7 +141,7 @@ An example without requested constraint
 Effect and Interactions
 -----------------------
 
-This change ``=>`` to ``|-`` keyword for inner constraint separator for pattern signatures
+This change ``=>`` to ``|-`` keyword for inner constraint/requested separator for pattern signatures
 on ``PatternSynonyms`` extension was made to avoid conflicts with Curried Context syntax
 and to allow more liberal requested signatures.
 
@@ -178,16 +178,17 @@ The primary alternative is "status quo".
 Alternative keywords
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-We could choose differen separator instead of proposed ``|-`` and unicode ``⊢`` keywords.
-Why? **Pro**: it looks mathematical. 
+We could choose differen requested separator instead of proposed ``|-`` and unicode ``⊢`` keywords.
+
+Why ``|-`` is choosen? **Pro**: it looks mathematical. 
 **Cons**: it is already used as operator in several packages:
 *uniplate*, *numhask*, *sbv*, *tidal*, *tidal-core*, *one-liner*.
 
-- Use a *word* for separator, for example ``then``. 
+- Use a *word* as separator, for example ``then``. 
   **Pro**: it is already a keyword for terms, looks mathematical. 
   **Cons**: it would be a second word as keyword in types
 
-- Use different *operator* for separator, for example:
+- Use different *operator* as separator, for example:
 
   #. Use ``|--`` and same unicode ``⊢`` for separator. **Pro**: it looks mathematical. 
      **Cons**: 3 letter instead of 2.
