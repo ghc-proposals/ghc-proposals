@@ -1,4 +1,4 @@
-New separator for View Patterns
+New syntax for View Patterns
 ==================================
 
 .. author:: Viktor WW
@@ -10,11 +10,11 @@ New separator for View Patterns
 .. sectnum::
 .. contents::
 
-We change the separator from ``->`` to ``|-`` in ``ViewPatterns`` 
+We change the syntax from ``(expr -> pat)`` to ``(pat <- expr)`` in ``ViewPatterns`` 
 to avoid any conflicts with ``RequiredTypeArguments`` syntax ::
 
-    size (view |- Unit) = 1
-    size (view |- Arrow t1 t2) = size t1 + size t2
+    size (Unit        <- view) = 1
+    size (Arrow t1 t2 <- view) = size t1 + size t2
 
 
 Motivation
@@ -23,39 +23,58 @@ Motivation
 Depended Haskell and ``RequiredTypeArguments`` extension especially 
 plays more and more significant role in modern haskell code.
 
-But due similar structure it is became harder and harder to distinguish 
+But due similar structure it is became harder and harder to distinguish
 type-terms from view patterns now if we use both extension together.
+::
 
-This proposal suggest a breaking change - change a syntax for ``ViewPatterns``
-in favor of ``RequiredTypeArguments``.
+ --     ---------- Is it View Pattern?
+ --     v
+ foo (b -> Int) = some_expr
+ --     ^
+ --     ---------- Is it Type Argument?
 
-We change the separator from ``->`` to ``|-`` to avoid 
-any conflicts with future of Depended Haskell ::
+So EACH time the compiler find an argument, it always checks
+if it consists exactly one ``->`` and if it has,
+then EACH time heuristic is applied is it just a type or expression with pattern.
 
-    endpoints (sort |- begin : (reverse |- end : _)) = Just (begin, end)
+So resolving this ambiguity make parsing much slower!
+So right now it is much easier to switch off one of 2 extension.
+
+Second, the current syntax looks **flipped** / wrong relative to guards, 
+do-expressions, comprehension generators and pattern synonyms.
+
+We change the syntax from ``(expr -> pat)`` to ``(pat <- expr)`` 
+
+- to avoid any conflicts with future of Depended Haskell 
+- to ``->`` arrow pointing like in pattern synonyms, guards and comprehension generators
+
+::
+
+    endpoints (begin : (end : _ <- reverse) <- sort) = Just (begin, end)
     endpoints _ = Nothing
+
+Even if it looks too radical, but it is better to change to something that looks right, 
+than to remain that looks wrong-looking.
+
+And yes, this proposal suggest a **breaking change** - we change a syntax for ``ViewPatterns``
+in favor of ``RequiredTypeArguments``.
 
 
 Proposed Change Specification
 -----------------------------
 
-First, we change the operator ``->`` for ``ViewPatterns`` extension to a new one ``|-`` separator.
+First, we change the syntax ``(expr -> pat)`` to ``(pat <- expr)`` for ``ViewPatterns`` extension.
 
-Second, we make operator ``|-`` as keyword in terms.
+We allow to use old syntax ``(expr -> pat)`` as Deprecated one with a Warning.
 
-Third, we allow to use old separator ``->`` as Deprecated one with a Warning.
-
-
-Syntax
-~~~~~~~~~~~~
 
 The formal grammar changes for assigned a pattern type signatures:
 
-.. code:: abnf
+.. code:: none
 
     apat ::= var [ @ apat]              --;     (as pattern)
         | ……
-        | '(' expr '|-' pat ')'         --; upd (view pattern)
+        | '(' pat '<-' expr ')'         --; upd (view pattern)
 	
 
 Examples
@@ -65,32 +84,23 @@ An example with requested constraint
 ::
 
     lensDownloads :: Map HaskellPackage Int -> Int
-    lensDownloads (M.lookup "lens" |- Just n) = n
+    lensDownloads (Just n <- M.lookup "lens") = n
     lensDownloads _ = 0
 
     email :: String -> Maybe EMail
-    email (parse |- x) = x
+    email (x <- parse) = x
 
     nonzero :: (a -> Int) -> a -> Maybe a
-    nonzero f (f |- 0) = Nothing
+    nonzero f (0 <- f) = Nothing
     nonzero _ x = Just x
 
 
 Effect and Interactions
 -----------------------
 
-This change ``->`` to ``|-`` keyword for separator for ``ViewPatterns`` extension 
+This change ``(expr -> pat)`` to ``(pat <- expr)`` for ``ViewPatterns`` extension 
 was made to avoid conflicts with ``RequiredTypeArguments`` syntax
 and future development of Depended Haskell.
-
-UnicodeSyntax
-~~~~~~~~~~~~~~~~
-
-We wish to preserve ``⊢`` (Right Tack, U+22A2) symbol to represent ``|-`` requested separator in pattern signatures.
-::
-    email ∷ String → Maybe EMail
-    email (parse ⊢ x) = x
-
 
 Costs and Drawbacks
 -------------------
@@ -113,12 +123,21 @@ Alternatives
 
 The primary alternative is "status quo".
 
-Alternative keywords
-~~~~~~~~~~~~~~~~~~~~~~~~
+Alternative separator instead of alternative syntax
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We could choose different separator instead of proposed ``|-`` and unicode ``⊢`` keywords.
+We could choose different separator  
+``(expr |- pat)`` and unicode ``(expr ⊢ pat)`` 
+instead of proposed different syntax.
+::
 
-Why ``|-`` is choosen? **Pro**: it looks mathematical. 
+    size (view |- Unit       ) = 1
+    size (view |- Arrow t1 t2) = size t1 + size t2
+	
+But we must to add this new separator as a keyword 
+(or at least term-keyword) which could broke some packages.
+
+Why ``|-`` could be choosen? **Pro**: it looks mathematical. 
 **Cons**: it is already used as operator in several packages:
 *uniplate*, *numhask*, *sbv*, *tidal*, *tidal-core*, *one-liner*.
 
