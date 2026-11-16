@@ -41,12 +41,13 @@ So resolving this ambiguity make parsing much slower!
 So right now it is much easier to switch off one of 2 extension.
 
 Second, the current syntax looks **flipped** / wrong relative to guards, 
-do-expressions, comprehension generators and pattern synonyms.
+do-expressions, comprehension generators and pattern synonym declarations.
 
 We change the syntax from ``(expr -> pat)`` to ``(pat <- expr)`` 
 
 - to avoid any conflicts with future of Depended Haskell 
-- to ``->`` arrow pointing like in pattern synonyms, guards and comprehension generators
+- to ``->`` arrow pointing like in pattern synonym declarations, 
+  guards and comprehension generators
 
 ::
 
