@@ -6,7 +6,7 @@ New syntax for View Patterns
 .. ticket-url:: 
 .. implemented:: 
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/767>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/777>`_.
 .. sectnum::
 .. contents::
 
