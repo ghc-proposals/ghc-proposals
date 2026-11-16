@@ -128,29 +128,35 @@ Alternative separator instead of alternative syntax
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We could choose different separator  
-``(expr |- pat)`` and unicode ``(expr ⊢ pat)`` 
+``(expr | pat)``  
 instead of proposed different syntax.
 ::
 
-    size (view |- Unit       ) = 1
-    size (view |- Arrow t1 t2) = size t1 + size t2
+    size (view | Unit       ) = 1
+    size (view | Arrow t1 t2) = size t1 + size t2
 	
 But we must to add this new separator as a keyword 
 (or at least term-keyword) which could broke some packages.
 
-Why ``|-`` could be choosen? **Pro**: it looks mathematical. 
-**Cons**: it is already used as operator in several packages:
-*uniplate*, *numhask*, *sbv*, *tidal*, *tidal-core*, *one-liner*.
+Why ``|`` could be choosen? **Pro**: it looks mathematical.
+It is already a keyword. It is unused in all packages.
+**Cons**: it looks boolean.
 
 Use different *operator* for separator, for example:
 
-#. Use ``|--`` and same unicode ``⊢`` for separator. 
+#. Use ``|-`` and unicode ``⊢`` (Right Tack, U+22A2) for separator. 
+   **Pro**: it looks mathematical.
+   **Cons**: 2 letter instead of 1.
+   It is already used as operator in several packages:
+   *uniplate*, *numhask*, *sbv*, *tidal*, *tidal-core*, *one-liner*.
+
+#. Use ``|--`` and same unicode ``⊢`` (Right Tack, U+22A2) for separator. 
    **Pro**: it looks mathematical. It is unused in all packages.
-   **Cons**: 3 letter instead of 2.
+   **Cons**: 3 letter instead of 1.
 
 #. Use ``||-`` and unicode ``⊩`` (Forces, U+22A9) for separator. 
    **Pro**: it looks mathematical. 
-   **Cons**: 3 letter instead of 2. It is already used as operator in several packages:
+   **Cons**: 3 letter instead of 1. It is already used as operator in several packages:
    *tidal*, *tidal-core*.
 
 #. Use ``|->``  and unicode ``↦`` (RIGHTWARDS ARROW FROM BAR, U+21A6) for separator. 
