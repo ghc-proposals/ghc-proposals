@@ -75,9 +75,11 @@ We should be able to have any of the following both in the Reqested and the Prov
 - Invisible forall ``forall (a::k).`` or ``forall {k}.``
 - Visible forall forall ``(a::k) ->``
 - Constraints ``(C a, D b) =>``
-- Function arguments ``T ->``
 
-Second, we make operator ``|-`` as keyword in signatures.
+Note: Function arguments ``T ->`` in Provided part is not a part of this proposal, 
+even it could be extended lately if it would be necessary.
+
+Second, we make operator ``|-`` as keyword in signatures. At least as Constraint name.
 
 Third, we allow to use old requested separator ``=>`` as Deprecated one with a Warning 
 till ``CurriedContext`` (or similar) extension in not developed and is not active.
@@ -94,11 +96,9 @@ The formal grammar changes for assigned a pattern type signatures:
         | 'pattern' pats '::' [signreq '|-'] signprov ['where' pdecls]    --; upd    (pattern declaration)
         | ……
 
-    signreq  ::= [foralls '.'] [context '=>'] type       --; new
-        | [foralls  '.'] context                         --; new
-        | foralls                                        --; new
+    signprov ::= sigtype                  --; upd
 
-    signprov ::= [foralls '.'] [context '=>'] type       --; upd
+    signreq  ::= [ foralls ] context      --; new
 
 Examples
 --------
@@ -117,6 +117,16 @@ An example with requested constraint in pattern
 
     f2 :: (Eq a, Num a) => T a -> String
     f2 (ExNumPat x) = show x
+
+This new separator allows to use curried constrains (once it become allowed)
+::
+
+    pattern ExNumPat' :: (Num a) => (Eq a) |- (Show b) => (Read b) => b -> T a
+
+This new separator also allows to use explicit ``forall`` s.
+::
+
+    pattern ExNumPat'' :: forall a. (Num a, Eq a) |- forall b. (Show b) => b -> T a
 
 An example without requested constraint
 ::
