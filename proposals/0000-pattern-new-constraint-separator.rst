@@ -55,8 +55,7 @@ has constraint or not:
 
 Third, current requested separator is not flexible enough. 
 Currently it is not supported visible forall in the Req/Prov parts of the pattern signature at all.
-Function arguments in the Req part is also do not supported. 
-Currently all function arguments are in the Prov part.
+Even function arguments are not part of this proposal, current syntax blocks to extend it for use them in the Req part. 
 In general, the Req/Prov split shouldn't be solely about constraints.
 
 
@@ -118,12 +117,12 @@ An example with requested constraint in pattern
     f2 :: (Eq a, Num a) => T a -> String
     f2 (ExNumPat x) = show x
 
-This new separator allows to use curried constrains (once it become allowed)
+This new separator allows to use curried constraints (once it become allowed)
 ::
 
     pattern ExNumPat' :: (Num a) => (Eq a) |- (Show b) => (Read b) => b -> T a
 
-This new separator also allows to use explicit ``forall`` s.
+This new separator also allows to use explicit ``forall`` s included nested ones.
 ::
 
     pattern ExNumPat'' :: forall a. (Num a, Eq a) |- forall b. (Show b) => b -> T a
