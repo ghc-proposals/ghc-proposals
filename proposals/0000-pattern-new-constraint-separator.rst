@@ -10,7 +10,7 @@ New requested separator for Pattern Synonyms
 .. sectnum::
 .. contents::
 
-We change the inner requested separator from ``=>`` to ``|-`` in ``PatternSynonyms`` 
+We change the inner requested separator from ``=>`` to ``|-`` in pattern signatures of ``PatternSynonyms`` 
 to avoid any conflicts with curried constraint syntax ::
 
     pattern P :: CReq |- CProv => t1 -> t2 -> ... -> tN -> t
@@ -39,7 +39,7 @@ This syntax is very universal and curried and it looks promising.
 
 Unfortunately, the syntax on ``PatternSynonyms`` has a conflict syntax 
 with curried context/constraint,
-so if we change inner constraint separator from ``=>`` to ``|-``,  
+so if we change inner constraint separator in pattern signatures from ``=>`` to ``|-``,  
 then we will avoid any future conflicts ::
 
     pattern P :: CReq |- CProv => t1 -> t2 -> ... -> tN -> t
@@ -62,7 +62,7 @@ In general, the Req/Prov split shouldn't be solely about constraints.
 Proposed Change Specification
 -----------------------------
 
-Main idea is: to have much simpler and more flexible syntax with ``|-`` requested separator 
+Main idea is: to have much simpler and more flexible syntax with ``|-`` requested separator in pattern signatures
 ::
 
     pattern P :: SignProv
@@ -87,17 +87,14 @@ till ``CurriedContext`` (or similar) extension in not developed and is not activ
 Syntax
 ~~~~~~~~~~~~
 
-The formal grammar changes for assigned a pattern type signatures:
+The formal grammar changes for assigned a pattern-synonym signatures:
 
 .. code:: abnf
 
-    topdecl ::= 'type' simpletype '=' type                                --;    (simple type declaration)
-        | 'pattern' pats '::' [signreq '|-'] signprov ['where' pdecls]    --; upd    (pattern declaration)
-        | ……
+    pattern_synonym_sig ::= 'pattern' patslist '::' [ signreq ] sigtype     --; upd
 
-    signprov ::= sigtype                  --; upd
+    signreq  ::= [ foralls ] context '|-'                                   --; upd
 
-    signreq  ::= [ foralls ] context      --; new
 
 Examples
 --------
@@ -187,7 +184,8 @@ The primary alternative is "status quo".
 Alternative keywords
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-We could choose differen requested separator instead of proposed ``|-`` and unicode ``⊢`` keywords.
+We could choose differen requested separator in pattern signatures
+instead of proposed ``|-`` and unicode ``⊢`` keywords.
 
 Why ``|-`` is choosen? **Pro**: it looks mathematical. 
 **Cons**: it is already used as operator in several packages:
