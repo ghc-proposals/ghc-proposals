@@ -1,5 +1,5 @@
 New requested separator for Pattern Synonyms
-================================================
+===============================================
 
 .. author:: Viktor WW
 .. date-accepted:: 
@@ -75,8 +75,9 @@ We should be able to have any of the following both in the Reqested and the Prov
 - Visible forall forall ``(a::k) ->``
 - Constraints ``(C a, D b) =>``
 
-Note: Function arguments ``T ->`` in Provided part is not a part of this proposal, 
-even it could be extended lately if it would be necessary.
+Note: Function arguments ``T ->`` in Requested part is not a part of this proposal
+(mainly because it is unclear what such FunArg in Req could represent), 
+even this could be extended lately if it would be necessary.
 
 Second, we make operator ``|-`` as keyword in signatures. At least as Constraint name.
 
@@ -114,17 +115,10 @@ An example with requested constraint in pattern
     f2 :: (Eq a, Num a) => T a -> String
     f2 (ExNumPat x) = show x
 
-This new separator allows to use curried constraints (once it become allowed)
-::
+Pattern signature with just Prov Constraint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    pattern ExNumPat' :: (Num a) => (Eq a) |- (Show b) => (Read b) => b -> T a
-
-This new separator also allows to use explicit ``forall`` s included nested ones.
-::
-
-    pattern ExNumPat'' :: forall a. (Num a, Eq a) |- forall b. (Show b) => b -> T a
-
-An example without requested constraint
+An example without requested Constraint, but with provided Constraint
 ::
 
     data S a where
@@ -133,7 +127,9 @@ An example without requested constraint
     pattern P1 :: Bool -> Maybe Bool
     pattern P1 b = Just b
 
-    --pattern P2 :: () => (b ~ Bool) => Bool -> S b
+    -- old separator
+    -- pattern P2 :: () => (b ~ Bool) => Bool -> S b
+
     pattern P2 :: (b ~ Bool) => Bool -> S b
     pattern P2 b = S1 b
 
@@ -142,6 +138,22 @@ An example without requested constraint
 
     g :: S a -> String
     g (P2 b) = "yes yes yes"  -- Fine
+
+Pattern signature with Curried Constraint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Theorethically if Curried Constraint become valid in Haskell, 
+then next will be possible to write:
+::
+
+    data T2 a where
+        MkT :: Show b => Read b => a -> b -> T2 a
+
+    f1 :: Num a => Eq a => T2 a -> String
+    f1 (MkT 42 x) = show x
+
+    pattern ExNumPat :: Num a => Eq a |- Show b => Read b => b -> T2 a
+    pattern ExNumPat x = MkT 42 x
 
 
 Effect and Interactions
