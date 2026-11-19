@@ -85,9 +85,9 @@ We should be able to have any of the following both in the Reqested and the Prov
 - Visible forall forall ``(a::k) ->``
 - Constraints ``(C a, D b) =>``
 
-Note: Function arguments ``T ->`` in Requested part is not a part of this proposal
+**Note**: *Function arguments* ``T ->`` *in Requested part is not a part of this proposal
 (mainly because it is unclear what such FunArg in Req could represent), 
-even this could be extended lately if it would be necessary.
+even this could be extended lately if it would be necessary.*
 
 Second, we make operator ``|-`` as keyword in signatures. At least as Constraint name.
 
