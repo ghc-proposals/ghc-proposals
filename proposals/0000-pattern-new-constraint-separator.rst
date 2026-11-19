@@ -53,9 +53,16 @@ has constraint or not:
 
     pattern P2 :: () => (C1 a, ...) => t1 -> t2 -> ... -> tN -> t
 
+And vice-versa if we have requested constraint, but without provided constraint, 
+then we also have special syntax:
+::
+
+    pattern P3 :: (C1 a, ...) => () => t1 -> t2 -> ... -> tN -> t
+
 Third, current requested separator is not flexible enough. 
 Currently it is not supported visible forall in the Req/Prov parts of the pattern signature at all.
-Even function arguments are not part of this proposal, current syntax blocks to extend it for use them in the Req part. 
+Even function arguments are not part of this proposal, 
+current syntax blocks to extend it for use them in the Req part. 
 In general, the Req/Prov split shouldn't be solely about constraints.
 
 
@@ -65,8 +72,10 @@ Proposed Change Specification
 Main idea is: to have much simpler and more flexible syntax with ``|-`` requested separator in pattern signatures
 ::
 
+    -- signature WITHOUT Requested parameters
     pattern P :: SignProv
 
+    -- signature WITH Requested parameters
     pattern P :: SignReq |- SignProv
 
 We should be able to have any of the following both in the Reqested and the Provided parts of a patsyn:
@@ -95,6 +104,7 @@ The formal grammar changes for assigned a pattern-synonym signatures:
     pattern_synonym_sig ::= 'pattern' patslist '::' [ signreq ] sigtype     --; upd
 
     signreq  ::= [ foralls ] context '|-'                                   --; upd
+               | foralls '|-'                                               --; upd
 
 
 Examples
@@ -115,8 +125,8 @@ An example with requested constraint in pattern
     f2 :: (Eq a, Num a) => T a -> String
     f2 (ExNumPat x) = show x
 
-Pattern signature with just Prov Constraint
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Pattern signature with just Provided Constraint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 An example without requested Constraint, but with provided Constraint
 ::
@@ -139,6 +149,24 @@ An example without requested Constraint, but with provided Constraint
     g :: S a -> String
     g (P2 b) = "yes yes yes"  -- Fine
 
+Pattern signature with just Requested Constraint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An example without provided Constraint, but with requested Constraint
+::
+
+    fromUniTuple :: Eq a => (a, a) -> Maybe a
+    fromUniTuple (x, y)
+        | x == y    = Just x
+        | otherwise = Nothing
+
+    -- old separator
+    -- pattern Double ::  (Eq a) => () => a -> (a, a)
+
+    pattern Double ::  (Eq a) |- a -> (a, a)
+    pattern Double a <- (fromUniTuple -> Just a)
+        where Double a = (a, a)
+
 Pattern signature with Curried Constraint
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -154,6 +182,21 @@ then next will be possible to write:
 
     pattern ExNumPat :: Num a => Eq a |- Show b => Read b => b -> T2 a
     pattern ExNumPat x = MkT 42 x
+
+Pattern signature with Requested just Forall
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An example without requested Constraint, but with requested ``forall``
+::
+
+    data T3 a where
+        MkT3 :: Bool -> b -> (b -> Int) -> a -> T a
+
+    pattern P ::  forall b. |- forall a. b -> (b -> Int) -> a -> T3 a
+    pattern P x y v <- MkT3 True x y (v :: a)
+
+Sure, we could use Visible forall ``forall b ->`` instead of invisible ``forall`` 
+in both data declaration and requested part.
 
 
 Effect and Interactions
