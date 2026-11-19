@@ -59,10 +59,11 @@ then we also have special syntax:
 
     pattern P3 :: (C1 a, ...) => () => t1 -> t2 -> ... -> tN -> t
 
-Third, current requested separator is not flexible enough. 
-Currently it is not supported visible forall in the Req/Prov parts of the pattern signature at all.
-Even function arguments are not part of this proposal, 
-current syntax blocks to extend it for use them in the Req part. 
+Third, the current requested separator is not flexible enough
+to extend to support more requested/provided parameters.
+Currently it is not supported visible forall in the Req/Prov parts 
+of the pattern signature at all.
+Invisible foralls aslo has limited support.
 In general, the Req/Prov split shouldn't be solely about constraints.
 
 
@@ -103,9 +104,10 @@ The formal grammar changes for assigned a pattern-synonym signatures:
 
     pattern_synonym_sig ::= 'pattern' patslist '::' [ signreq ] sigtype     --; upd
 
-    signreq  ::= [ foralls ] context '|-'                                   --; upd
-               | foralls '|-'                                               --; upd
+    signreq ::= context  '|-'                                               --; upd
+              | foralls [ context ] '|-'                                    --; upd
 
+    sigtype ::= [ foralls ] [ context '=>' ] type
 
 Examples
 --------
@@ -265,6 +267,13 @@ Why ``|-`` is choosen? **Pro**: it looks mathematical.
      **Cons**: 4 letter instead of 2. 
      Unclear which unicode could be used. Do not looks mathematical.
 
+Function arguments in Requested part
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Function arguments ``T ->`` in Requested part is not a part of this proposal,
+because it is unclear what such FunArg in Req could represent.
+
+But new syntax could easily be extended to support them if the meaning can be found.
 
 Unresolved Questions
 --------------------
