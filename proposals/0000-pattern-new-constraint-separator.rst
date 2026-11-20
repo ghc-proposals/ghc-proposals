@@ -159,18 +159,24 @@ Second, we make operator ``|-`` as keyword in signatures. At least as Constraint
 Third, we allow to use old requested separator ``=>`` as Deprecated one with a Warning 
 till ``CurriedContext`` (or similar) extension in not developed and is not active.
 
-Optional  reverse type for Bidirectional Pattern Signatures
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Optional Reverse Signature for Bidirectional Pattern Synonyms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To be backward compatible, we chose "Alternative 1" from the Accepted proposal: 
 allow an optional reverse signature, and the compiler tries to infer its type if it is omitted.
 ::
 
+    --  Obverse signature to detailed bidirectional patterns could be optionally added
     pattern Double ::  (Eq a) |- a -> (a, a)
     pattern Double a <- (fromUniTuple -> Just a)
       where 
-        Double :: a -> (a, a)   -- optional
+        --  Reverse signature to detailed bidirectional patterns could be optionally added
+        Double :: a -> (a, a)   -- optional, NEW
         Double a = (a, a)
+
+    -- Both-handed signature to simple bidirectional patterns could be optionally added
+    pattern Pair :: a -> b -> (a, b)
+    pattern Pair x y = (x, y)
 
 We also remain how ``:info`` command works (described in the Accepted proposal), 
 but we change how ``:type`` and ``:kind`` commands works and how 
@@ -178,13 +184,51 @@ type/kind in the copmpiler errors describes:
 
 .. code:: cmd
 
+    ghci> :t Pair
+    Pair <- :: a -> b -> (a, b)
+    Pair -> :: a -> b -> (a, b)
+
+    ////
+
     ghci> :t Double
     Double <- :: (Eq a) |- a -> (a, a)
+    Double -> :: a -> (a, a)
+
+    ghci> :t Double <-
+    Double <- :: (Eq a) |- a -> (a, a)
+
+    ghci> :t Double ->
     Double -> :: a -> (a, a)
 
     ghci> :info Double
     pattern Double :: (Eq a) |- a -> (a, a) where
         Double :: a -> (a, a)
+
+Bidirectional Patterns Simple ones and Detailed ones have now 2 Signatures:
+
+- ``<-`` "Left-Handed Signature", same as "Obversed Signature" 
+- ``->`` "Right-Handed Signature", same as "Reversed Signature" 
+- "Both-Handed Signature" - if Left-Handed Signature is the same as Right-Handed Signature
+
+Left-Handed Signature for Unidirectional Patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Unidirectional Patterns has 1 Signature, and it is always Left-Handed Signature:
+::
+
+    pattern Head :: a -> [a]
+    pattern Head x <- x : _
+
+.. code:: cmd
+
+    ghci> :t Head
+    Head <- :: a -> [a]
+
+    ghci> :t Head <-
+    Head <- :: a -> [a]
+
+    ghci> :t Head ->
+    ERROR
 
 Syntax
 ~~~~~~~~~~~~
@@ -210,13 +254,16 @@ The formal grammar changes for Bi-Signatures are described in the Accepted Propo
     pattern <PatName> :: <PatSignatureObverse> where
         <PatName> :: <PatSignatureReverse>
 
-#. For ``:type`` and ``:kind`` command for ``ghci`` we describe Bi-Signatures in next format
+#. For ``:type`` and ``:kind`` command for ``ghci`` we describe Bi-Signatures in next 2 formats
 
 .. code:: none
 
     ghci> :type <PatName>
-    <PatName> <- :: <PatSignatureObverse>
-    <PatName> -> :: <PatSignatureReverse>
+      <PatName> <- :: <PatSignatureObverse>
+    [ <PatName> -> :: <PatSignatureReverse> ]
+
+    ghci> :type <PatName> <PatDirection>
+    <PatName> <PatDirection> :: <PatSignatureDirection>
 
 #. The copmpiler errors with Bi-Signatures uses same format as ``:type`` command
 
