@@ -19,8 +19,23 @@ And we also allow to write more general Requested and Provided signatures: ::
 
     pattern P :: SignReq |- SignProv
 
+This proposal also unblock implementation Bi-signatures for Bidirectional patterns.
+::
+
+    pattern P :: t1
+    pattern P ... <- some_expr_in
+      where 
+        P :: t2
+        P ...  = some_expr_out
+
 Motivation
 ----------
+
+Pattern-Synonyms Signatures are disigned in a such way, that they are not flexible enough.
+This proposal suggest to update a bit their design.
+
+Curried Constrains and Context in Pattern-Synonyms Signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Several ideas and proposals and feature requests appear to allow to write 
 Curried Constrains and Context in different places: 
@@ -62,6 +77,9 @@ then we also have special syntax:
 
     pattern P3 :: (C1 a, ...) => () => t1 -> t2 -> ... -> tN -> t
 
+Visible and Invisible Foralls in Requested part of Pattern-Synonym Signature
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Third, currently it is not supported visible forall in the Req/Prov parts 
 of the pattern signature at all.
 Invisible foralls aslo has limited support.
@@ -85,9 +103,37 @@ to extend to support more requested/provided parameters.
 For example this feature suggests to have Function arguments ``T ->`` in Requested part
 to represent "failure continuation type from" (right now it always ``Void#`` type).
 
+Bi-Signatures for Bidirectional Pattern-Synonyms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We also change a bit already Accepted Proposal `Pattern synonym construction function signatures
+<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0042-bidir-constr-sigs.rst>`__ 
+to unblock the implementation by making "constructor signature" optional:
+::
+
+    pattern P4 ::  t1 -> t2 -> ... -> tN -> t
+    pattern P4 ... <- some_expr_in
+      where 
+        P4 :: t1 -> t2 -> ... -> tN -> t   -- optional
+        P4 ...  = some_expr_out
+
+And we have special format for displaying pattern info, type and kind
+
+.. code:: cmd
+
+    ghci> :type P4
+    P4 <- :: t1 -> t2 -> ... -> tN -> t
+    P4 -> :: t1 -> t2 -> ... -> tN -> t
+
+    ghci> :info P4
+    pattern P4 :: t1 -> t2 -> ... -> tN -> t where
+        P4 :: t1 -> t2 -> ... -> tN -> t
 
 Proposed Change Specification
 -----------------------------
+
+Changing Requested separator and allowing more parameters in signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Main idea is: to have much simpler and more flexible syntax with ``|-`` requested separator in pattern signatures
 ::
@@ -113,6 +159,32 @@ Second, we make operator ``|-`` as keyword in signatures. At least as Constraint
 Third, we allow to use old requested separator ``=>`` as Deprecated one with a Warning 
 till ``CurriedContext`` (or similar) extension in not developed and is not active.
 
+Optional  reverse type for Bidirectional Pattern Signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To be backward compatible, we chose "Alternative 1" from the Accepted proposal: 
+allow an optional reverse signature, and the compiler tries to infer its type if it is omitted.
+::
+
+    pattern Double ::  (Eq a) |- a -> (a, a)
+    pattern Double a <- (fromUniTuple -> Just a)
+      where 
+        Double :: a -> (a, a)   -- optional
+        Double a = (a, a)
+
+We also remain how ``:info`` command works (described in the Accepted proposal), 
+but we change how ``:type`` and ``:kind`` commands works and how 
+type/kind in the copmpiler errors describes:
+
+.. code:: cmd
+
+    ghci> :t Double
+    Double <- :: (Eq a) |- a -> (a, a)
+    Double -> :: a -> (a, a)
+
+    ghci> :info Double
+    pattern Double :: (Eq a) |- a -> (a, a) where
+        Double :: a -> (a, a)
 
 Syntax
 ~~~~~~~~~~~~
@@ -127,6 +199,26 @@ The formal grammar changes for assigned a pattern-synonym signatures:
               | foralls [ context ] '|-'                                    --; upd
 
     sigtype ::= [ foralls ] [ context '=>' ] type
+
+The formal grammar changes for Bi-Signatures are described in the Accepted Proposal.
+
+#. For ``:info`` command for ``ghci`` we describe Bi-Signatures in next format
+
+.. code:: none
+
+    ghci> :info <PatName>
+    pattern <PatName> :: <PatSignatureObverse> where
+        <PatName> :: <PatSignatureReverse>
+
+#. For ``:type`` and ``:kind`` command for ``ghci`` we describe Bi-Signatures in next format
+
+.. code:: none
+
+    ghci> :type <PatName>
+    <PatName> <- :: <PatSignatureObverse>
+    <PatName> -> :: <PatSignatureReverse>
+
+#. The copmpiler errors with Bi-Signatures uses same format as ``:type`` command
 
 Examples
 --------
@@ -219,6 +311,24 @@ An example without requested Constraint, but with requested ``forall``
 Sure, we could use Visible forall ``forall b ->`` instead of invisible ``forall`` 
 in both data declaration and requested part.
 
+Bi-Signatures for Bidirectional Patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Several examples for Bi-Signatures for Bidirectional Patterns:
+::
+
+    pattern Zero :: (Num a, Eq a) => a
+    pattern Zero <- ((== 0) -> True)
+      where
+        Zero :: Num a => a
+        Zero = 0
+
+
+    pattern NF :: a -> NF a
+    pattern NF a <- UnsafeNF a where
+      NF :: NFData a => a -> NF a
+      NF a = a `deepseq` UnsafeNF a
+
 
 Effect and Interactions
 -----------------------
@@ -257,8 +367,8 @@ Alternatives
 
 The primary alternative is "status quo".
 
-Alternative keywords
-~~~~~~~~~~~~~~~~~~~~~~~~
+Alternative keywords for Requested separator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We could choose differen requested separator in pattern signatures
 instead of proposed ``|-`` and unicode ``⊢`` keywords.
@@ -286,6 +396,20 @@ Why ``|-`` is choosen? **Pro**: it looks mathematical.
      **Cons**: 4 letter instead of 2. 
      Unclear which unicode could be used. Do not looks mathematical.
 
+Alternative markers for Bi-signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We could choose differen  markers for Bi-signatures in pattern signatures
+instead of proposed ``->`` and ``<-`` keywords.
+
+Why ``->`` and ``<-`` are choosen? **Pro**: they shows direction. They are already keywords.
+**Cons**: both looks like type application.
+
+Use different *operators* as separators, for example:
+
+#. Use ``=>`` and ``<-`` for separator. **Pro**: they shows direction. They are already keywords.
+   **Cons**: ``<-`` looks like type application and ``=>`` looks like context separator.
+
 Function arguments in Requested part
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -310,6 +434,7 @@ Acknowledgments
 ---------------
 
 - `int-index <https://github.com/int-index>`_, for proposing generalized syntax in the pull discussion.
+- `Bodigrim <https://github.com/Bodigrim>`_, for proposing unblocking implementation bi-signature syntax in the pull discussion.
 
 
 Endorsements
