@@ -1,5 +1,5 @@
-New syntax for Pattern Synonyms Signatures
-===============================================
+Improved syntax for Pattern Synonyms Signatures
+=================================================
 
 .. author:: Viktor WW
 .. date-accepted:: 
