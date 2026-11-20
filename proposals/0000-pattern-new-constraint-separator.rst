@@ -1,4 +1,4 @@
-New requested separator for Pattern Synonyms
+New syntax for Pattern Synonyms Signatures
 ===============================================
 
 .. author:: Viktor WW
@@ -25,15 +25,18 @@ Motivation
 Several ideas and proposals and feature requests appear to allow to write 
 Curried Constrains and Context in different places: 
 
-- Proposal: `Curried Class Contexts <https://github.com/ghc-proposals/ghc-proposals/pull/666>`__
-- Feature Request: `Curried contexts in prefix GADT constructors <https://gitlab.haskell.org/ghc/ghc/-/work_items/27424>`__
-- Feature Request: `Refactor ConDeclGADT to allow nested foralls and contexts <https://gitlab.haskell.org/ghc/ghc/-/work_items/27425>`__
-- Feature Request: `Support TypeAbstractions in PatternSynonyms <https://gitlab.haskell.org/ghc/ghc/-/work_items/27642>`__
+- Proposal: `Curried Class Contexts 
+  <https://github.com/ghc-proposals/ghc-proposals/pull/666>`__
+
+- Feature Request: `Curried contexts in prefix GADT constructors 
+  <https://gitlab.haskell.org/ghc/ghc/-/work_items/27424>`__
+
+- Feature Request: `Refactor ConDeclGADT to allow nested foralls and contexts 
+  <https://gitlab.haskell.org/ghc/ghc/-/work_items/27425>`__
 
 They suggest to see, for example that several constraints ``C1 a => C2 a b => (C3 a, C3 b)`` are the same 
 as ``C1 a => (C2 a b, C3 a, C3 b)``
 and are the same as ``(C1 a, C2 a b, C3 a, C3 b)``
-
 
 This syntax is very universal and curried and it looks promising.
 
@@ -59,12 +62,28 @@ then we also have special syntax:
 
     pattern P3 :: (C1 a, ...) => () => t1 -> t2 -> ... -> tN -> t
 
-Third, the current requested separator is not flexible enough
-to extend to support more requested/provided parameters.
-Currently it is not supported visible forall in the Req/Prov parts 
+Third, currently it is not supported visible forall in the Req/Prov parts 
 of the pattern signature at all.
 Invisible foralls aslo has limited support.
 In general, the Req/Prov split shouldn't be solely about constraints.
+
+- Feature Request: `Visible forall in pattern synonyms 
+  <https://gitlab.haskell.org/ghc/ghc/-/work_items/23704>`__
+
+- Feature Request: `Support TypeAbstractions in PatternSynonyms 
+  <https://gitlab.haskell.org/ghc/ghc/-/work_items/27642>`__
+
+- Feature Request: `Unbound type variable causes panic with RequiredTypeArguments and PatternSynonyms 
+  <https://gitlab.haskell.org/ghc/ghc/-/work_items/27583>`__
+
+But the current requested separator is not flexible enough
+to extend to support more requested/provided parameters.
+
+- Feature Request: `Generalise Pattern synonyms 
+  <https://gitlab.haskell.org/ghc/ghc/-/work_items/27476>`__
+
+For example this feature suggests to have Function arguments ``T ->`` in Requested part
+to represent "failure continuation type from" (right now it always ``Void#`` type).
 
 
 Proposed Change Specification
