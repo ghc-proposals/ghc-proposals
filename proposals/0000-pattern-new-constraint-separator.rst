@@ -129,11 +129,26 @@ And we have special format for displaying pattern info, type and kind
     pattern P4 :: t1 -> t2 -> ... -> tN -> t where
         P4 :: t1 -> t2 -> ... -> tN -> t
 
+Unpinned Pattern-Synonyms Signatures from declaration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In the description of the ``PatternSynonyms`` extension, 
+it is not defined whether pattern signatures 
+are pinned or unpinned to pattern declarations.
+
+Right now, pattern signatures are de facto pinned to pattern declarations.
+But this is not uniform, because for most non-embedded signatures 
+are unpinned from the declaration.
+
+So, we clarify that in the ``PatternSynonyms`` extension, 
+pattern signatures are unpinned from pattern declarations. 
+
+
 Proposed Change Specification
 -----------------------------
 
-Changing Requested separator and allowing more parameters in signatures
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Changing the Requested separator and allowing more parameters in signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Main idea is: to have much simpler and more flexible syntax with ``|-`` requested separator in pattern signatures
 ::
@@ -166,21 +181,21 @@ To be backward compatible, we chose "Alternative 1" from the Accepted proposal:
 allow an optional reverse signature, and the compiler tries to infer its type if it is omitted.
 ::
 
-    --  Obverse signature to detailed bidirectional patterns could be optionally added
+    --  Obverse signature for detailed bidirectional patterns could be optionally added
     pattern Double ::  (Eq a) |- a -> (a, a)
     pattern Double a <- (fromUniTuple -> Just a)
       where 
-        --  Reverse signature to detailed bidirectional patterns could be optionally added
+        --  Reverse signature for detailed bidirectional patterns could be optionally added
         Double :: a -> (a, a)   -- optional, NEW
         Double a = (a, a)
 
-    -- Both-handed signature to simple bidirectional patterns could be optionally added
+    -- Both-handed signature for simple bidirectional patterns could be optionally added
     pattern Pair :: a -> b -> (a, b)
     pattern Pair x y = (x, y)
 
-We also remain how ``:info`` command works (described in the Accepted proposal), 
+We also remain how ``:info`` command works (it is described in the Accepted proposal), 
 but we change how ``:type`` and ``:kind`` commands works and how 
-type/kind in the copmpiler errors describes:
+the compiler describes type/kind in errors:
 
 .. code:: cmd
 
@@ -204,16 +219,16 @@ type/kind in the copmpiler errors describes:
     pattern Double :: (Eq a) |- a -> (a, a) where
         Double :: a -> (a, a)
 
-Bidirectional Patterns Simple ones and Detailed ones have now 2 Signatures:
+Simple and Detailed Bidirectional Patterns have now 2 Signatures:
 
-- ``<-`` "Left-Handed Signature", same as "Obversed Signature" 
-- ``->`` "Right-Handed Signature", same as "Reversed Signature" 
+- ``<-`` mark for "Left-Handed Signature", same as "Obversed Signature" 
+- ``->`` mark for "Right-Handed Signature", same as "Reversed Signature" 
 - "Both-Handed Signature" - if Left-Handed Signature is the same as Right-Handed Signature
 
 Left-Handed Signature for Unidirectional Patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Unidirectional Patterns has 1 Signature, and it is always Left-Handed Signature:
+Unidirectional Patterns has 1 Signature and it is always Left-Handed Signature:
 ::
 
     pattern Head :: a -> [a]
@@ -230,6 +245,24 @@ Unidirectional Patterns has 1 Signature, and it is always Left-Handed Signature:
     ghci> :t Head ->
     ERROR
 
+Unpinned Pattern-Synonyms Signatures Syntax
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Syntax for unpinning Unidirectional and Simple Bidirectional Patterns Signatures is trivial.
+
+But Detailed Bidirectional Patterns Signatures are only partly unpinned.
+::
+
+    -- unpinned LH-signature 
+    pattern Double :: (Eq a) |- a -> (a, a)
+
+    -- LH-declaration
+    pattern Double a <- (fromUniTuple -> Just a) where
+        -- RH-signature
+        Double :: a -> (a, a)
+        -- RH-declaration
+        Double a = (a, a)
+
 Syntax
 ~~~~~~~~~~~~
 
@@ -237,14 +270,32 @@ The formal grammar changes for assigned a pattern-synonym signatures:
 
 .. code:: abnf
 
-    pattern_synonym_sig ::= 'pattern' patslist '::' [ signreq ] sigtype     --; upd
+    pattern_synonym_sig ::= 'pattern' sign1way           --; upd
 
-    signreq ::= context  '|-'                                               --; upd
-              | foralls [ context ] '|-'                                    --; upd
+    sign1way ::= patslist '::' [ signreq ] sigtype       --; upd
+
+    signreq ::= context  '|-'                            --; upd
+              | foralls [ context ] '|-'                 --; new
 
     sigtype ::= [ foralls ] [ context '=>' ] type
 
+Omittable Request part in the Signature
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We make the Requested part in the Signature fully omittable if there is no Request part.
+
+Optional Foralls in Request part in the Signature
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We allow using foralls in the Requested and Provided parts of the Signature when needed.
+
+Syntax of Bi-Signatures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 The formal grammar changes for Bi-Signatures are described in the Accepted Proposal.
+
+Syntax changes for GHCI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. For ``:info`` command for ``ghci`` we describe Bi-Signatures in next format
 
@@ -266,6 +317,7 @@ The formal grammar changes for Bi-Signatures are described in the Accepted Propo
     <PatName> <PatDirection> :: <PatSignatureDirection>
 
 #. The copmpiler errors with Bi-Signatures uses same format as ``:type`` command
+
 
 Examples
 --------
