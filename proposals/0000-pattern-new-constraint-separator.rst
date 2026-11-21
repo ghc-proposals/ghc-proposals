@@ -137,8 +137,8 @@ it is not defined whether pattern signatures
 are pinned or unpinned to pattern declarations.
 
 Right now, pattern signatures are de facto pinned to pattern declarations.
-But this is not uniform, because for most non-embedded signatures 
-are unpinned from the declaration.
+But this is not uniform, because for most non-embedded signatures, 
+they are unpinned from the declaration.
 
 So, we clarify that in the ``PatternSynonyms`` extension, 
 pattern signatures are unpinned from pattern declarations. 
@@ -171,7 +171,11 @@ even this could be extended lately if it would be necessary.*
 
 Second, we make operator ``|-`` as keyword in signatures. At least as Constraint name.
 
-Third, we allow to use old requested separator ``=>`` as Deprecated one with a Warning 
+Third, with the current syntax with ``=>`` separator, there is no difference 
+between explicit foralls if they are in provided or required parts, 
+but improved syntax distinguishes them.
+
+Fourth, we allow to use old requested separator ``=>`` as Deprecated one with a Warning 
 till ``CurriedContext`` (or similar) extension in not developed and is not active.
 
 Optional Reverse Signature for Bidirectional Pattern Synonyms
@@ -250,14 +254,17 @@ Unpinned Pattern-Synonyms Signatures Syntax
 
 Syntax for unpinning Unidirectional and Simple Bidirectional Patterns Signatures is trivial.
 
-But Detailed Bidirectional Patterns Signatures are only partly unpinned.
+But Detailed Bidirectional Patterns Signatures are only partly unpinned 
+just like unpinned signatures in function declarations, which
+consists ``where`` clause.
 ::
 
     -- unpinned LH-signature 
     pattern Double :: (Eq a) |- a -> (a, a)
 
     -- LH-declaration
-    pattern Double a <- (fromUniTuple -> Just a) where
+    pattern Double a <- (fromUniTuple -> Just a)
+      where
         -- RH-signature
         Double :: a -> (a, a)
         -- RH-declaration
