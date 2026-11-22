@@ -475,7 +475,7 @@ We wish to preserve ``⊢`` (Right Tack, U+22A2) symbol to represent ``|-`` requ
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs of separator change has low difficulty.
+We expect the implementation and maintenance costs of separator change has average difficulty.
 
 
 Backward Compatibility
