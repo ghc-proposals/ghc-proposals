@@ -31,7 +31,7 @@ This proposal also unblock implementation Bi-signatures for Bidirectional patter
 Motivation
 ----------
 
-Pattern-Synonyms Signatures are disigned in a such way, that they are not flexible enough.
+Pattern-Synonyms Signatures are designed in a such way, that they are not flexible enough.
 This proposal suggest to update a bit their design.
 
 Curried Constrains and Context in Pattern-Synonyms Signatures
@@ -82,7 +82,7 @@ Visible and Invisible Foralls in Requested part of Pattern-Synonym Signature
 
 Third, currently it is not supported visible forall in the Req/Prov parts 
 of the pattern signature at all.
-Invisible foralls aslo has limited support.
+Invisible foralls also has limited support.
 In general, the Req/Prov split shouldn't be solely about constraints.
 
 - Feature Request: `Visible forall in pattern synonyms 
@@ -159,7 +159,7 @@ Main idea is: to have much simpler and more flexible syntax with ``|-`` requeste
     -- signature WITH Requested parameters
     pattern P :: SignReq |- SignProv
 
-We should be able to have any of the following both in the Reqested and the Provided parts of a patsyn:
+We should be able to have any of the following both in the Requested and the Provided parts of a patsyn:
 
 - Invisible forall ``forall (a::k).`` or ``forall {k}.``
 - Visible forall forall ``(a::k) ->``
@@ -223,7 +223,7 @@ the compiler describes type/kind in errors:
     pattern Double :: (Eq a) |- a -> (a, a) where
         Double :: a -> (a, a)
 
-Simple and Detailed Bidirectional Patterns have now 2 Signatures:
+Simple/Symmetrical and Detailed/Asymmetrical Bidirectional Patterns have now 2 Signatures:
 
 - ``<-`` mark for "Left-Handed Signature", same as "Obversed Signature" 
 - ``->`` mark for "Right-Handed Signature", same as "Reversed Signature" 
@@ -249,12 +249,32 @@ Unidirectional Patterns has 1 Signature and it is always Left-Handed Signature:
     ghci> :t Head ->
     ERROR
 
+
+Bidirectional Pattern renaming
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Right now there are the convention, which say names of Bidirectional Patterns:
+
+- Inferred Bidirectional Pattern, but it unclear what is inferred
+- Explicit Bidirectional Pattern, but it unclear what is non-explicit in "Inferred" on
+
+So, this Proposal suggest to rename 
+
+- "Inferred Bidirectional Pattern" into "Symmetrical Bidirectional Pattern",
+  because Pattern Construction and Destruction has same signature
+- "Explicit Bidirectional Pattern" into "Asymmetrical Bidirectional Pattern",
+  because Pattern Construction and Destruction could has (and often has) different signatures.
+
+Right now "Explicit Bidirectional Pattern" has optional obverse signature and inferred reverse signature, 
+and by this proposal both obverse and reverse signature are optional.
+
+
 Unpinned Pattern-Synonyms Signatures Syntax
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Syntax for unpinning Unidirectional and Simple Bidirectional Patterns Signatures is trivial.
+Syntax for unpinning Unidirectional and Symmetrical Bidirectional Patterns Signatures is trivial.
 
-But Detailed Bidirectional Patterns Signatures are only partly unpinned 
+But Detailed/Asymmetrical Bidirectional Patterns Signatures are only partly unpinned 
 just like unpinned signatures in function declarations, which
 consists ``where`` clause.
 ::
@@ -323,7 +343,7 @@ Syntax changes for GHCI
     ghci> :type <PatName> <PatDirection>
     <PatName> <PatDirection> :: <PatSignatureDirection>
 
-#. The copmpiler errors with Bi-Signatures uses same format as ``:type`` command
+#. The compiler errors with Bi-Signatures uses same format as ``:type`` command
 
 
 Examples
@@ -389,7 +409,7 @@ An example without provided Constraint, but with requested Constraint
 Pattern signature with Curried Constraint
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Theorethically if Curried Constraint become valid in Haskell, 
+Theoretically if Curried Constraint become valid in Haskell, 
 then next will be possible to write:
 ::
 
@@ -476,8 +496,8 @@ The primary alternative is "status quo".
 Alternative keywords for Requested separator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We could choose differen requested separator in pattern signatures
-instead of proposed ``|-`` and unicode ``⊢`` keywords.
+We could choose different requested separator in pattern signatures
+instead of proposed ``|-`` and Unicode ``⊢`` keywords.
 
 Why ``|-`` is choosen? **Pro**: it looks mathematical. 
 **Cons**: it is already used as operator in several packages:
@@ -489,10 +509,10 @@ Why ``|-`` is choosen? **Pro**: it looks mathematical.
 
 - Use different *operator* as separator, for example:
 
-  #. Use ``|--`` and same unicode ``⊢`` for separator. **Pro**: it looks mathematical. 
+  #. Use ``|--`` and same Unicode ``⊢`` for separator. **Pro**: it looks mathematical. 
      **Cons**: 3 letter instead of 2.
 
-  #. Use ``||-`` and unicode ``⊩`` (Forces, U+22A9) for separator. 
+  #. Use ``||-`` and Unicode ``⊩`` (Forces, U+22A9) for separator. 
      **Pro**: it looks mathematical. 
      **Cons**: 3 letter instead of 2. It is already used as operator in several packages:
      *tidal*, *tidal-core*.
@@ -500,15 +520,15 @@ Why ``|-`` is choosen? **Pro**: it looks mathematical.
   #. Use ``=>=>`` for separator. 
      **Pro**: Similar to already used one. 
      **Cons**: 4 letter instead of 2. 
-     Unclear which unicode could be used. Do not looks mathematical.
+     Unclear which Unicode could be used. Do not looks mathematical.
 
 Alternative markers for Bi-signatures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We could choose differen  markers for Bi-signatures in pattern signatures
+We could choose different  markers for Bi-signatures in pattern signatures
 instead of proposed ``->`` and ``<-`` keywords.
 
-Why ``->`` and ``<-`` are choosen? **Pro**: they shows direction. They are already keywords.
+Why ``->`` and ``<-`` are chosen? **Pro**: they shows direction. They are already keywords.
 **Cons**: both looks like type application.
 
 Use different *operators* as separators, for example:
