@@ -25,7 +25,7 @@ This proposal also unblock implementation Bi-signatures for Bidirectional patter
     pattern P :: t1
     pattern P ... <- some_expr_in
       where 
-        P :: t2
+        pattern P :: t2
         P ...  = some_expr_out
 
 Motivation
@@ -127,7 +127,7 @@ And we have special format for displaying pattern info, type and kind
 
     ghci> :info P4
     pattern P4 :: t1 -> t2 -> ... -> tN -> t where
-        P4 :: t1 -> t2 -> ... -> tN -> t
+        pattern P4 :: t1 -> t2 -> ... -> tN -> t
 
 Unpinned Pattern-Synonyms Signatures from declaration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -582,6 +582,9 @@ Use different *operators* as separators, for example:
 
 #. Use ``=>`` and ``<-`` for separator. **Pro**: they shows direction. They are already keywords.
    **Cons**: ``<-`` looks like type application and ``=>`` looks like context separator.
+
+#. Use ``<=>`` insead of ``<->`` for marker. **Pro**: they shows direction.
+   **Cons**: ``<=>`` looks like context separator or equality.
 
 Function arguments in Requested part
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
