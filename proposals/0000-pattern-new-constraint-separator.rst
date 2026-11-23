@@ -358,6 +358,7 @@ The formal grammar changes for assigned a pattern-synonym signatures:
     sign1way ::= patslist '::' [ signreq ] sigtype             --; upd
 
     dirway   ::= '<->'                                         --; new
+               | '↔'
                | '<-'
                | '->'
 
@@ -368,6 +369,9 @@ The formal grammar changes for assigned a pattern-synonym signatures:
 
 Directional markers are not keywords and could be "overlapped" with 
 operator-function or operator-type declarations.
+
+To avoid Unicode renaming with ``UnicodeSyntax`` extension (since ``<->`` is not a keyword), 
+we explicitly allow use ``↔`` (Left Right Arrow, U+2194) symbol to represent ``<->`` mark.
 
 Omittable Request part in the Signature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
