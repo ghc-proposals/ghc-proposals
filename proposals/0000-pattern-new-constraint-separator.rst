@@ -326,9 +326,25 @@ consists ``where`` clause.
     pattern Double a <- (fromUniTuple -> Just a)
       where
         -- RH-signature
-        Double :: a -> (a, a)
+        pattern Double :: a -> (a, a)
         -- RH-declaration
         Double a = (a, a)
+
+But together with Explicitly directional Signatures we could fully unpinn
+Asymmetrical Bidirectional Pattern Signatures from Asymmetrical Bidirectional Pattern Declaration.
+::
+
+    -- unpinned LH-signature 
+    pattern <- Double :: (Eq a) |- a -> (a, a)
+    -- unpinned RH-signature 
+    pattern -> Double :: a -> (a, a)
+
+    -- LH-declaration
+    pattern Double a <- (fromUniTuple -> Just a)
+      where
+        -- RH-declaration
+        Double a = (a, a)
+
 
 Syntax
 ~~~~~~~~~~~~
