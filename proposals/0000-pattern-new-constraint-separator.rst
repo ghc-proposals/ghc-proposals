@@ -114,7 +114,7 @@ to unblock the implementation by making "constructor signature" optional:
     pattern P4 ::  t1 -> t2 -> ... -> tN -> t
     pattern P4 ... <- some_expr_in
       where 
-        P4 :: t1 -> t2 -> ... -> tN -> t   -- optional
+        pattern P4 :: t1 -> t2 -> ... -> tN -> t   -- optional
         P4 ...  = some_expr_out
 
 And we have special format for displaying pattern info, type and kind
@@ -181,25 +181,46 @@ till ``CurriedContext`` (or similar) extension in not developed and is not activ
 Optional Reverse Signature for Bidirectional Pattern Synonyms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To be backward compatible, we chose "Alternative 1" from the Accepted proposal: 
+Implementation of Accepted Proposal `Pattern synonym construction function signatures
+<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0042-bidir-constr-sigs.rst>`__ 
+was blocked mostly due to ... lack of volunteers/inactivity for more than 10 years.
+
+But that proposal still has several unresolved questions.
+
+First, we are not "just" allowed to optionally write a signature to the "constructor part" we're fixing; 
+that bidirectional patterns have 2 signatures: obverse one and reverse one.
+
+What limitations do we have? 
+Obverse and Reverse signatures have the same number of inputs (same amount of ``->`` )
+and every input must have the same or equal type and kind. The output type for both
+signatures must also be the same or equal.
+Constraints could be different.
+
+Second, to be backward compatible, we chose "Alternative 1" from the Accepted proposal: 
 allow an optional reverse signature, and the compiler tries to infer its type if it is omitted.
 ::
 
-    --  Obverse signature for detailed bidirectional patterns could be optionally added
-    pattern Double ::  (Eq a) |- a -> (a, a)
+    --  Obverse signature for asymmetric bidirectional patterns could be optionally added
+    pattern Double :: (Eq a) |- a -> (a, a)
     pattern Double a <- (fromUniTuple -> Just a)
       where 
-        --  Reverse signature for detailed bidirectional patterns could be optionally added
-        Double :: a -> (a, a)   -- optional, NEW
+        --  Reverse signature for asymmetric bidirectional patterns could be optionally added
+        pattern Double :: a -> (a, a)   -- optional, NEW
         Double a = (a, a)
 
-    -- Both-handed signature for simple bidirectional patterns could be optionally added
+    -- Both-handed signature for symmetric bidirectional patterns could be optionally added
     pattern Pair :: a -> b -> (a, b)
     pattern Pair x y = (x, y)
 
-We also remain how ``:info`` command works (it is described in the Accepted proposal), 
-but we change how ``:type`` and ``:kind`` commands works and how 
-the compiler describes type/kind in errors:
+Third, even the accepted proposal specifies *different* formats for obverse and reverse signatures,
+we simplify to just 1 unified format with a mandatory ``pattern`` keyword at the beginning of the signature.
+
+Fourth unresolved question - is how many Signatures will have "Inferred"/Simple/Symmetric Bidirectional Pattern?
+By this proposal, Simple/Symmetric pattern will also have 2 Signatures, but both Signatures are equal.
+
+Fifth, we remain how ``:info`` command works with ``ghci`` (it is described in the Accepted proposal), 
+but we change how ``:type`` and ``:kind`` commands works  with ``ghci`` and how 
+the compiler describes types and kinds in errors:
 
 .. code:: cmd
 
@@ -220,19 +241,21 @@ the compiler describes type/kind in errors:
     Double -> :: a -> (a, a)
 
     ghci> :info Double
-    pattern Double :: (Eq a) |- a -> (a, a) where
-        Double :: a -> (a, a)
+    pattern Double :: (Eq a) |- a -> (a, a) 
+      where
+        pattern Double :: a -> (a, a)
 
-Simple/Symmetrical and Detailed/Asymmetrical Bidirectional Patterns have now 2 Signatures:
+Simple/Symmetric and Detailed/Asymmetric Bidirectional Patterns have now 2 Signatures:
 
 - ``<-`` mark for "Left-Handed Signature", same as "Obversed Signature" 
 - ``->`` mark for "Right-Handed Signature", same as "Reversed Signature" 
-- "Both-Handed Signature" - if Left-Handed Signature is the same as Right-Handed Signature
+- ``<->`` mark for "Both-Handed Signature" (or without such mark, but when Left-Handed Signature is the same as Right-Handed Signature)
 
 Left-Handed Signature for Unidirectional Patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Unidirectional Patterns has 1 Signature and it is always Left-Handed Signature:
+Sixth unresolved question - is how which "variation" of Signatures will have Unidirectional Pattern?
+By this proposal, for unification purposes, Unidirectional Pattern has 1 Signature, and it is always a Left-Handed Signature:
 ::
 
     pattern Head :: a -> [a]
@@ -249,32 +272,49 @@ Unidirectional Patterns has 1 Signature and it is always Left-Handed Signature:
     ghci> :t Head ->
     ERROR
 
+Explicitly directional Signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is not mandatory, but optionally we could add explicit direction to Signatures
+just after ``pattern`` keyword :
+::
+
+    pattern <- Head :: a -> [a]
+    pattern Head x <- x : _
+
+    pattern <-> Pair :: a -> b -> (a, b)
+    pattern Pair x y = (x, y)
+
+    pattern <- Double :: (Eq a) |- a -> (a, a)
+    pattern Double a <- (fromUniTuple -> Just a)
+      where
+        pattern -> Double :: a -> (a, a)
+        Double a = (a, a)
 
 Bidirectional Pattern renaming
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Right now there are the convention, which say names of Bidirectional Patterns:
+Right now, by convention, the names of Bidirectional Patterns are:
 
-- Inferred Bidirectional Pattern, but it unclear what is inferred
-- Explicit Bidirectional Pattern, but it unclear what is non-explicit in "Inferred" on
+- Inferred Bidirectional Pattern, but it is unclear what is inferred
+- Explicit Bidirectional Pattern, but it is unclear what is non-explicit in "Inferred" pattern
 
-So, this Proposal suggest to rename 
+So, this proposal suggests the following renaming:
 
-- "Inferred Bidirectional Pattern" into "Symmetrical Bidirectional Pattern",
-  because Pattern Construction and Destruction has same signature
-- "Explicit Bidirectional Pattern" into "Asymmetrical Bidirectional Pattern",
-  because Pattern Construction and Destruction could has (and often has) different signatures.
+- "Inferred Bidirectional Pattern" into "Symmetric Bidirectional Pattern",
+  because Pattern Construction and Destruction have the same signature
+- "Explicit Bidirectional Pattern" into "Asymmetric Bidirectional Pattern",
+  because Pattern Construction and Destruction could have (and often have) different signatures.
 
-Right now "Explicit Bidirectional Pattern" has optional obverse signature and inferred reverse signature, 
-and by this proposal both obverse and reverse signature are optional.
-
+Right now "Explicit Bidirectional Pattern" has an optional obverse signature and an inferred reverse signature, 
+and by this proposal, both obverse and reverse signatures are optional.
 
 Unpinned Pattern-Synonyms Signatures Syntax
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Syntax for unpinning Unidirectional and Symmetrical Bidirectional Patterns Signatures is trivial.
+Syntax for unpinning Unidirectional and Symmetric Bidirectional Pattern Signatures is trivial.
 
-But Detailed/Asymmetrical Bidirectional Patterns Signatures are only partly unpinned 
+But Detailed/Asymmetrical Bidirectional Pattern Signatures are only partly unpinned 
 just like unpinned signatures in function declarations, which
 consists ``where`` clause.
 ::
@@ -297,14 +337,21 @@ The formal grammar changes for assigned a pattern-synonym signatures:
 
 .. code:: abnf
 
-    pattern_synonym_sig ::= 'pattern' sign1way           --; upd
+    pattern_synonym_sig ::= 'pattern' [ dirway ] sign1way      --; upd
 
-    sign1way ::= patslist '::' [ signreq ] sigtype       --; upd
+    sign1way ::= patslist '::' [ signreq ] sigtype             --; upd
 
-    signreq ::= context  '|-'                            --; upd
-              | foralls [ context ] '|-'                 --; new
+    dirway   ::= '<->'                                         --; new
+               | '<-'
+               | '->'
 
-    sigtype ::= [ foralls ] [ context '=>' ] type
+    signreq  ::= context  '|-'                                 --; upd
+               | foralls [ context ] '|-'                      --; new
+
+    sigtype  ::= [ foralls ] [ context '=>' ] type
+
+Directional markers are not keywords and could be "overlapped" with 
+operator-function or operator-type declarations.
 
 Omittable Request part in the Signature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -499,7 +546,7 @@ Alternative keywords for Requested separator
 We could choose different requested separator in pattern signatures
 instead of proposed ``|-`` and Unicode ``⊢`` keywords.
 
-Why ``|-`` is choosen? **Pro**: it looks mathematical. 
+Why ``|-`` is chosen? **Pro**: it looks mathematical. 
 **Cons**: it is already used as operator in several packages:
 *uniplate*, *numhask*, *sbv*, *tidal*, *tidal-core*, *one-liner*.
 
@@ -526,7 +573,7 @@ Alternative markers for Bi-signatures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We could choose different  markers for Bi-signatures in pattern signatures
-instead of proposed ``->`` and ``<-`` keywords.
+instead of proposed ``->`` , ``<-`` and ``<->`` markers.
 
 Why ``->`` and ``<-`` are chosen? **Pro**: they shows direction. They are already keywords.
 **Cons**: both looks like type application.
