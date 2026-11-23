@@ -254,7 +254,7 @@ Simple/Symmetric and Detailed/Asymmetric Bidirectional Patterns have now 2 Signa
 Left-Handed Signature for Unidirectional Patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sixth unresolved question - is how which "variation" of Signatures will have Unidirectional Pattern?
+Sixth unresolved question is which "variation" of Signatures will have Unidirectional Pattern?
 By this proposal, for unification purposes, Unidirectional Pattern has 1 Signature, and it is always a Left-Handed Signature:
 ::
 
