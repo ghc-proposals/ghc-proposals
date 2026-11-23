@@ -412,7 +412,10 @@ Syntax changes for GHCI
 Examples
 --------
 
-An example with requested constraint in pattern
+Pattern signature with different Constraints in Req/Prov parts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An example with both requested and provided constraint in pattern
 ::
 
     data T a where
@@ -427,8 +430,6 @@ An example with requested constraint in pattern
     f2 :: (Eq a, Num a) => T a -> String
     f2 (ExNumPat x) = show x
 
-Pattern signature with just Provided Constraint
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 An example without requested Constraint, but with provided Constraint
 ::
@@ -451,9 +452,6 @@ An example without requested Constraint, but with provided Constraint
     g :: S a -> String
     g (P2 b) = "yes yes yes"  -- Fine
 
-Pattern signature with just Requested Constraint
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 An example without provided Constraint, but with requested Constraint
 ::
 
@@ -469,11 +467,8 @@ An example without provided Constraint, but with requested Constraint
     pattern Double a <- (fromUniTuple -> Just a)
         where Double a = (a, a)
 
-Pattern signature with Curried Constraint
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 Theoretically if Curried Constraint become valid in Haskell, 
-then next will be possible to write:
+then next will be possible to write and fully distinguishable:
 ::
 
     data T2 a where
@@ -485,8 +480,12 @@ then next will be possible to write:
     pattern ExNumPat :: Num a => Eq a |- Show b => Read b => b -> T2 a
     pattern ExNumPat x = MkT 42 x
 
-Pattern signature with Requested just Forall
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Pattern signature with different Foralls in Req/Prov parts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With old syntax, there were no difference between foralls.
+The compiler guess through Requested Constraint which tyvar is which: Universal or Existential.
+New syntax see the clear difference.
 
 An example without requested Constraint, but with requested ``forall``
 ::
@@ -500,6 +499,21 @@ An example without requested Constraint, but with requested ``forall``
 Sure, we could use Visible forall ``forall b ->`` instead of invisible ``forall`` 
 in both data declaration and requested part.
 
+With new syntax we could write Type Applications (and Type Arguments) in such patterns
+::
+    data T a where
+      MkT :: forall a. a -> T a
+
+    pattern P :: forall a. |- a -> T a     -- tyvar "a" is Existential
+    pattern P @a x <- MkT @a x where
+    --        ^           ^
+    --     occurrence    binding
+    --
+        pattern P :: forall a. a -> T a     -- tyvar "a" is Universal
+        P @a x = MkT @a x
+    --    ^           ^
+    --   binding  occurrence
+
 Bi-Signatures for Bidirectional Patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -509,14 +523,34 @@ Several examples for Bi-Signatures for Bidirectional Patterns:
     pattern Zero :: (Num a, Eq a) => a
     pattern Zero <- ((== 0) -> True)
       where
-        Zero :: Num a => a
+        pattern Zero :: Num a => a
         Zero = 0
 
 
     pattern NF :: a -> NF a
-    pattern NF a <- UnsafeNF a where
-      NF :: NFData a => a -> NF a
-      NF a = a `deepseq` UnsafeNF a
+    pattern NF a <- UnsafeNF a 
+      where
+        pattern NF :: NFData a => a -> NF a
+        NF a = a `deepseq` UnsafeNF a
+
+Same examples, but with Unpinned signatures and Explicit direction in Signatures
+::
+
+    pattern <- Zero :: (Num a, Eq a) => a
+    pattern -> Zero :: Num a => a
+
+    pattern <- NF :: a -> NF a
+    pattern -> NF :: NFData a => a -> NF a
+
+    --
+
+    pattern Zero <- ((== 0) -> True)
+      where
+        Zero = 0
+
+    pattern NF a <- UnsafeNF a 
+      where
+        NF a = a `deepseq` UnsafeNF a
 
 
 Effect and Interactions
