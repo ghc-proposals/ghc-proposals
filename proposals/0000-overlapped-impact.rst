@@ -1,4 +1,4 @@
-Overlapped Impact
+Overlapping Depth
 ===================
 
 .. author:: Viktor WW
@@ -10,8 +10,9 @@ Overlapped Impact
 .. sectnum::
 .. contents::
 
-We propose to add optional **impact** to ``OVERLAPPING`` / ``OVERLAPABLE`` / ``OVERLAPS`` 
-pragmas to have more flexible control over which instance is chosen when they overlap. 
+We propose to add optional **overlapping depth** 
+to ``OVERLAPPING`` / ``OVERLAPABLE`` / ``OVERLAPS`` pragmas to have 
+more flexible control over which instance is chosen when they overlap. 
 
 
 Motivation
@@ -41,8 +42,9 @@ especially when the number of instances is more than 3-5.
 	
     instance {-# INCOHERENT #-} CountI [Char] where ...
 
-This proposal suggests adding **Impact** to Overlapping Instances to allow 
-more accurate calculation of which instance must be chosen.
+This proposal suggests adding **depth** to Overlapping Instances to allow 
+explicitly writing it for more accurate calculation 
+which instance must be chosen.
 ::
 
     instance {-# OVERLAPPING -1    #-} Formatter a where ...
@@ -69,25 +71,25 @@ more accurate calculation of which instance must be chosen.
 Proposed Change Specification
 -----------------------------
 
-Introduce a new extension ``OverlappedImpact``.
+Introduce a new extension ``OverlappingDepth``.
 
-With this extension, we could explicitly write impact 
+With this extension, we could explicitly write depth 
 in ``OVERLAPPING`` / ``OVERLAPABLE`` / ``OVERLAPS`` pragmas.
 
 *Note: We use pseudo-pragma* ``NOOVERLAP`` *here for instances without any pragma.*
 
-For backward compatibility, implicit impact in pragmas is allowed.
+For backward compatibility, implicit depth in pragmas is still allowed.
 And we also remain ``OVERLAPABLE`` and ``OVERLAPS`` pragmas, even they becomes redundant.
 
-How to define the impact from the pragmas? Very easy:
+How to define the depth from the pragmas? Very easy:
 
 .. code:: none
 
-    NOOVERLAP     -> impact = 0 
+    NOOVERLAP     -> depth = 0 
 
-    OVERLAPPING j -> impact = +j
+    OVERLAPPING j -> depth = +j
 
-    OVERLAPABLE j -> impact = -j
+    OVERLAPABLE j -> depth = -j
 
 And we have the next dependencies for other variations:
   
@@ -108,9 +110,9 @@ And we have the next dependencies for other variations:
     OVERLAPABLE j = OVERLAPPING -j
 
 ``Ratio Int`` type is chosen to be able to interpose any amount of 
-instances between any impact values.
+instances between any depth values.
 
-How is impact influencing instance choosing? 
+How is depth influencing instance choosing? 
 We changed the choosing algorithm to the next one:
 
 #. Filter all instances by the head.
@@ -119,7 +121,7 @@ We changed the choosing algorithm to the next one:
 
 #. If just 1 candidate remains - then SUCCESS
 
-#. **UPDATED**: Filter all remaining candidates **to the highest Impact** from the remaining ones
+#. **UPDATED**: Filter all remaining candidates **to the highest Depth** from the remaining ones
 
 #. If just 1 candidate remains - then SUCCESS
 
@@ -138,30 +140,30 @@ then non-overlapping is guaranteed at runtime.
 Syntax
 ~~~~~~~~~~~~
 
-The formal grammar changes for impacts in pragmas is:
+The formal grammar changes for depth in pragmas is:
 
 .. code:: abnf
 
-    impact ::= [ '-' ] numr [ [ '%' ] denom ]        ;-- new
+    odepth ::= [ '-' ] numr [ [ '%' ] denom ]        ;-- new
 	
     numr   ::= dec_digit {dec_digit}                 ;-- new
 	
     denom  ::= dec_digit {dec_digit}                 ;-- new
 	
 	
-    prgm_overl_ing  ::= '{-#' 'OVERLAPPING' [ impact ] '#-}'    ;-- upd
+    prgm_overl_ing  ::= '{-#' 'OVERLAPPING' [ odepth ] '#-}'    ;-- upd
 	
-    prgm_overl_able ::= '{-#' 'OVERLAPABLE' [ impact ] '#-}'    ;-- upd
+    prgm_overl_able ::= '{-#' 'OVERLAPABLE' [ odepth ] '#-}'    ;-- upd
 	
-    prgm_overl_s    ::= '{-#' 'OVERLAPS'    [ impact ] '#-}'    ;-- upd
+    prgm_overl_s    ::= '{-#' 'OVERLAPS'    [ odepth ] '#-}'    ;-- upd
 	
 Sure, default values (when a value is omitted) are:
 
 - ``default numr   = 1``
 - ``default denom  = 1``
-- ``default impact = 1``
+- ``default odepth = 1``
 
-The factor ``impact :: Ratio Int`` has rational type,
+The factor ``odepth :: Ratio Int`` has rational type,
 but we parse it from raw to avoid dependence on ``Data.Ratio``
 in the Module.
 
@@ -171,7 +173,7 @@ so in the future ``OVERLAPABLE`` and ``OVERLAPS`` pragmas would be Deprecated.
 Examples
 --------
 
-Examples with new syntax
+Example with new syntax
 ::
 
     instance {-# OVERLAPPING -2    #-} context1 => C Int b     where ...  -- (A)
