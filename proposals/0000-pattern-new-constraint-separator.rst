@@ -15,11 +15,11 @@ to avoid any conflicts with curried constraint syntax ::
 
     pattern P :: CReq |- CProv => t1 -> t2 -> ... -> tN -> t
 
-And we also allow to write more general Requested and Provided signatures: ::
+And we also allow writing more flexible Requested and Provided parts of signatures: ::
 
     pattern P :: SignReq |- SignProv
 
-This proposal also unblock implementation Bi-signatures for Bidirectional patterns.
+Furthermore, this proposal unblocks implementation of bi-signatures for Bidirectional patterns.
 ::
 
     pattern P :: t1
@@ -31,8 +31,9 @@ This proposal also unblock implementation Bi-signatures for Bidirectional patter
 Motivation
 ----------
 
-Pattern-Synonyms Signatures are designed in a such way, that they are not flexible enough.
-This proposal suggest to update a bit their design.
+Pattern-Synonyms Signatures are designed in such a way that 
+they are not flexible enough to mark every complex relation.
+This proposal suggests updating this design.
 
 Curried Constrains and Context in Pattern-Synonyms Signatures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,25 +54,25 @@ They suggest to see, for example that several constraints ``C1 a => C2 a b => (C
 as ``C1 a => (C2 a b, C3 a, C3 b)``
 and are the same as ``(C1 a, C2 a b, C3 a, C3 b)``
 
-This syntax is very universal and curried and it looks promising.
+This syntax is very universal and curried, and it looks promising.
 
-Unfortunately, the syntax on ``PatternSynonyms`` has a conflict syntax 
-with curried context/constraint,
-so if we change inner constraint separator in pattern signatures from ``=>`` to ``|-``,  
+Unfortunately, the syntax on ``PatternSynonyms`` has a conflict with the syntax 
+with curried context/constraint, so if we change the inner constraint separator 
+in pattern signatures from ``=>`` to ``|-``,  
 then we will avoid any future conflicts ::
 
     pattern P :: CReq |- CProv => t1 -> t2 -> ... -> tN -> t
 
-Second, unfortunately right now we have strange situation, when
-pattern signatures without requested signature has different syntax if provided signature
-has constraint or not: 
+Second, unfortunately, right now we have a strange situation: when
+pattern signatures without a requested signature have different syntax 
+if the provided signature has constraints or not: 
 ::
 
     pattern P1 :: t1 -> t2 -> ... -> tN -> t
 
     pattern P2 :: () => (C1 a, ...) => t1 -> t2 -> ... -> tN -> t
 
-And vice-versa if we have requested constraint, but without provided constraint, 
+And vice versa: if we have requested constraints but no provided constraint, 
 then we also have special syntax:
 ::
 
@@ -82,7 +83,7 @@ Visible and Invisible Foralls in Requested part of Pattern-Synonym Signature
 
 Third, currently it is not supported visible forall in the Req/Prov parts 
 of the pattern signature at all.
-Invisible foralls also has limited support.
+Invisible foralls also have limited support.
 In general, the Req/Prov split shouldn't be solely about constraints.
 
 - Feature Request: `Visible forall in pattern synonyms 
@@ -100,13 +101,13 @@ to extend to support more requested/provided parameters.
 - Feature Request: `Generalise Pattern synonyms 
   <https://gitlab.haskell.org/ghc/ghc/-/work_items/27476>`__
 
-For example this feature suggests to have Function arguments ``T ->`` in Requested part
+For example, this feature suggests having Function arguments ``T ->`` in the Requested part
 to represent "failure continuation type from" (right now it always ``Void#`` type).
 
 Bi-Signatures for Bidirectional Pattern-Synonyms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We also change a bit already Accepted Proposal `Pattern synonym construction function signatures
+We also changed a bit of the already Accepted Proposal `Pattern synonym construction function signatures
 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0042-bidir-constr-sigs.rst>`__ 
 to unblock the implementation by making "constructor signature" optional:
 ::
@@ -133,24 +134,24 @@ Unpinned Pattern-Synonyms Signatures from declaration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the description of the ``PatternSynonyms`` extension, 
-it is not defined whether pattern signatures 
-are pinned or unpinned to pattern declarations.
+it is not defined whether pattern **signatures** 
+are pinned or unpinned to pattern **declarations**.
 
 Right now, pattern signatures are de facto pinned to pattern declarations.
-But this is not uniform, because for most non-embedded signatures, 
-they are unpinned from the declaration.
+But this relation is not uniform: most non-embedded item signatures 
+are unpinned from item declarations.
 
 So, we clarify that in the ``PatternSynonyms`` extension, 
-pattern signatures are unpinned from pattern declarations. 
+pattern signatures are **unpinned** from pattern declarations. 
 
 
 Proposed Change Specification
 -----------------------------
 
-Changing the Requested separator and allowing more parameters in signatures
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Changing the Requested separator and allowing more parameters in Req/Prov parts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Main idea is: to have much simpler and more flexible syntax with ``|-`` requested separator in pattern signatures
+Main idea is to have much simpler and more flexible syntax with ``|-`` requested separator in pattern signatures
 ::
 
     -- signature WITHOUT Requested parameters
@@ -165,18 +166,18 @@ We should be able to have any of the following both in the Requested and the Pro
 - Visible forall forall ``(a::k) ->``
 - Constraints ``(C a, D b) =>``
 
-**Note**: *Function arguments* ``T ->`` *in Requested part is not a part of this proposal
+**Note**: *Function arguments* ``T ->`` *in the Requested part are not a part of this proposal
 (mainly because it is unclear what such FunArg in Req could represent), 
-even this could be extended lately if it would be necessary.*
+even though this could be extended later if it would be necessary.*
 
-Second, we make operator ``|-`` as keyword in signatures. At least as Constraint name.
+Second, we make the operator ``|-`` a keyword in signatures. At least in a Constraint Namespace.
 
 Third, with the current syntax with ``=>`` separator, there is no difference 
 between explicit foralls if they are in provided or required parts, 
 but improved syntax distinguishes them.
 
-Fourth, we allow to use old requested separator ``=>`` as Deprecated one with a Warning 
-till ``CurriedContext`` (or similar) extension in not developed and is not active.
+Fourth, we allow the use of the old requested separator ``=>`` as a Deprecated one with a Warning 
+till ``CurriedContext`` (or similar) extension is developed.
 
 Optional Reverse Signature for Bidirectional Pattern Synonyms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -188,7 +189,7 @@ was blocked mostly due to ... lack of volunteers/inactivity for more than 10 yea
 But that proposal still has several unresolved questions.
 
 First, we are not "just" allowed to optionally write a signature to the "constructor part" we're fixing; 
-that bidirectional patterns have 2 signatures: obverse one and reverse one.
+that bidirectional patterns have 2 signatures: one obverse and one reverse.
 
 What limitations do we have? 
 Obverse and Reverse signatures have the same number of inputs (same amount of ``->`` )
@@ -215,7 +216,7 @@ allow an optional reverse signature, and the compiler tries to infer its type if
 Third, even the accepted proposal specifies *different* formats for obverse and reverse signatures,
 we simplify to just 1 unified format with a mandatory ``pattern`` keyword at the beginning of the signature.
 
-Fourth unresolved question - is how many Signatures will have "Inferred"/Simple/Symmetric Bidirectional Pattern?
+The fourth unresolved question is how many Signatures will have an "Inferred"/Simple/Symmetric Bidirectional Pattern?
 By this proposal, Simple/Symmetric pattern will also have 2 Signatures, but both Signatures are equal.
 
 Fifth, we remain how ``:info`` command works with ``ghci`` (it is described in the Accepted proposal), 
@@ -245,17 +246,19 @@ the compiler describes types and kinds in errors:
       where
         pattern Double :: a -> (a, a)
 
-Simple/Symmetric and Detailed/Asymmetric Bidirectional Patterns have now 2 Signatures:
+Symmetric and Asymmetric Bidirectional Patterns have now 2 Signatures:
 
 - ``<-`` mark for "Left-Handed Signature", same as "Obversed Signature" 
 - ``->`` mark for "Right-Handed Signature", same as "Reversed Signature" 
-- ``<->`` mark for "Both-Handed Signature" (or without such mark, but when Left-Handed Signature is the same as Right-Handed Signature)
+- ``<->`` mark for "Both-Handed Signature" (or without such mark, but 
+  when Left-Handed Signature is the same as Right-Handed Signature)
 
 Left-Handed Signature for Unidirectional Patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sixth unresolved question is which "variation" of Signatures will have Unidirectional Pattern?
-By this proposal, for unification purposes, Unidirectional Pattern has 1 Signature, and it is always a Left-Handed Signature:
+The sixth  unresolved question is which "variation" of Signatures will have Unidirectional Pattern?
+By this proposal, for unification purposes, Unidirectional Pattern has 1 Signature, 
+and it is always a Left-Handed Signature:
 ::
 
     pattern Head :: a -> [a]
@@ -297,7 +300,7 @@ Bidirectional Pattern renaming
 Right now, by convention, the names of Bidirectional Patterns are:
 
 - Inferred Bidirectional Pattern, but it is unclear what is inferred
-- Explicit Bidirectional Pattern, but it is unclear what is non-explicit in "Inferred" pattern
+- Explicit Bidirectional Pattern, but it is unclear what is non-explicit in the "Inferred" pattern
 
 So, this proposal suggests the following renaming:
 
@@ -314,7 +317,7 @@ Unpinned Pattern-Synonyms Signatures Syntax
 
 Syntax for unpinning Unidirectional and Symmetric Bidirectional Pattern Signatures is trivial.
 
-But Detailed/Asymmetrical Bidirectional Pattern Signatures are only partly unpinned 
+But Asymmetrical Bidirectional Pattern Signatures are only partly unpinned 
 just like unpinned signatures in function declarations, which
 consists ``where`` clause.
 ::
@@ -330,8 +333,9 @@ consists ``where`` clause.
         -- RH-declaration
         Double a = (a, a)
 
-But together with Explicitly directional Signatures we could fully unpinn
-Asymmetrical Bidirectional Pattern Signatures from Asymmetrical Bidirectional Pattern Declaration.
+But together with Explicitly directional Signatures we could fully unpin
+Asymmetrical Bidirectional Pattern Signatures 
+from Asymmetrical Bidirectional Pattern Declaration.
 ::
 
     -- unpinned LH-signature 
@@ -487,9 +491,9 @@ then next will be possible to write and fully distinguishable:
 Pattern signature with different Foralls in Req/Prov parts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-With old syntax, there were no difference between foralls.
-The compiler guess through Requested Constraint which tyvar is which: Universal or Existential.
-New syntax see the clear difference.
+With old syntax, there was no difference between foralls.
+The compiler guesses through Requested Constraint which tyvar is which: Universal or Existential.
+But the new syntax separates them.
 
 An example without requested Constraint, but with requested ``forall``
 ::
