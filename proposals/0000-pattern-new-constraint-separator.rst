@@ -185,29 +185,41 @@ Naming Signatures for Pattern Synonyms
 For Asymmetric Bidirectional Pattern, we call signatures:
 
 - "Left-Handed Signature", same as "Obversed Signature" 
-  for the first signature (which is before the ``where`` clause) 
+  for the first signature (which is before the ``where`` clause),
+  which is connected to Pattern declaration with ``<-`` mark 
+  for Deconstruction as Pattern role.
 - "Right-Handed Signature", same as "Reversed Signature" 
-  for the second signature (which is after the ``where`` clause)
+  for the second signature (which is after the ``where`` clause),
+  which is connected to Pattern declaration with ``=`` (instead of ``->``) mark 
+  for Construction as Expression role.
 
 For the Symmetric Bidirectional Pattern, we call the signature "Both-Handed Signature" 
-(because Left-Handed Signature is the same as Right-Handed Signature).
+(because Left-Handed Signature is the same as Right-Handed Signature),
+which is connected to Pattern declaration with ``=`` mark 
+for both Deconstruction as Pattern role AND Construction as Expression role.
 
 For the Unidirectional Pattern, we call the signature "Left-Handed Signature"
-or "One-Handed Signature" (because it doesn't have a Right-Handed Signature).
+or "One-Handed Signature" (because it doesn't have a Right-Handed Signature),
+which is connected to Pattern declaration with ``<-`` mark 
+for Deconstruction as Pattern role.
 
 Changing the Requested separator and allowing more parameters in Req/Prov parts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For much simpler and more flexible syntax
 
-#. we replace ``=>`` requested separator to ``|-`` in pattern signatures
+#. We replace ``=>`` requested separator to ``|-`` in pattern signatures.
 
-#. we make the operator ``|-`` a keyword in signatures. At least in a Constraint Namespace.
+#. We make the operator ``|-`` a keyword in signatures. At least in a Constraint Namespace.
 
-#. we start to distinguish requested explicit ``forall`` from provided one and have errors 
+#. We start to distinguish requested explicit ``forall`` from provided one and have errors 
    if it is declared in the wrong part of the signature.
 
-#. we make the requested part optional/omittable
+#. it is possible to repeat SAME explicit type variables from requested part of ``forall`` 
+   in provided part of explicit ``forall`` if pattern use implicit type application
+   and order of type varibles matters.
+
+#. We make the requested part optional/omittable.
    ::
 
     -- signature WITHOUT Requested parameters
@@ -216,11 +228,11 @@ For much simpler and more flexible syntax
     -- signature WITH Requested parameters
     pattern P :: SignReq |- SignProv
 
-#. temporarily, we allow the use of the old requested separator ``=>`` 
+#. Temporarily, we allow the use of the old requested separator ``=>`` 
    as a Deprecated one with a warning until ``CurriedContext`` 
    (or similar) extension is developed or earlier.
 
-These changes allow to have any of the following both in the Requested and the Provided parts of a patsyn.:
+These changes allow to have any of the following both in the Requested and the Provided parts of a patsyn:
 
 - Invisible forall ``forall (a::k).`` or ``forall {k}.``
 - Visible forall forall ``(a::k) ->``
@@ -233,7 +245,7 @@ even though this could be extended later if it would be necessary.*
 Changes for Reverse signatures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. we make the format for Reverse Signature the same as for Obverse Signature
+#. We make the format for Reverse Signature the same as for Obverse Signature
    with a mandatory ``pattern`` keyword at the beginning of the signature.
 
    The accepted 42nd proposal specifies *different* formats for obverse and reverse signatures,
@@ -251,7 +263,7 @@ Changes for Reverse signatures
         -- mandatory keyword "pattern" here
         Double a = (a, a)
 
-#. we make Reverse Signature for Asymmetric Bidirectional Pattern optionally explicit.
+#. We make Reverse Signature for Asymmetric Bidirectional Pattern optionally explicit.
 
    Right now, Asymmetric Bidirectional Pattern has an optional obverse signature 
    and an inferred reverse signature, and by this proposal, 
@@ -259,7 +271,7 @@ Changes for Reverse signatures
    That means we choose "Alternative 1" from the Accepted 42nd proposal:
    the compiler tries to infer Reverse Signature when it is omitted.
 
-#. we add the following limitations for Reverse Signature relative to the Obverse one:
+#. We add the following limitations for Reverse Signature relative to the Obverse one:
 
    - Obverse and Reverse signatures must have the same number of inputs (same amount of ``->`` )
 
@@ -353,10 +365,10 @@ Bi-Signatures Representation for Patterns
 
    So, Unidirectional Pattern has 1 Signature, and it is always a Left-Handed Signature.
 
-#. commands in ``ghci`` - ``:type`` and ``:kind`` for patterns shows bi-signatures 
+#. Commands in ``ghci`` - ``:type`` and ``:kind`` for patterns shows bi-signatures 
    with direction marks.
 
-#. the compiler could describe types and kinds for patterns 
+#. The compiler could describe types and kinds for patterns 
    with direction marks in Error messages.
 
 Syntax changes for GHC
