@@ -492,6 +492,12 @@ With old syntax, there was no difference between foralls.
 The compiler guesses, through Requested Constraint, which tyvar is which: Universal or Existential.
 But the new syntax separates them.
 
+With explicit ``forall`` we could rewrite signature for previous example
+::
+
+    pattern ExNumPat :: forall b. (Num a, Eq a) => forall a.(Show b) => b -> T a
+    pattern ExNumPat x = MkT 42 x
+
 An example without requested Constraint, but with requested ``forall``
 ::
 
