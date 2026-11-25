@@ -394,8 +394,9 @@ Syntax changes for GHCI
 .. code:: none
 
     ghci> :info <PatName>
-    pattern <PatName> :: <PatSignatureObverse> where
-        pattern <PatName> :: <PatSignatureReverse>
+    pattern <PatName> <- :: <PatSignatureObverse> 
+      where
+        pattern <PatName> -> :: <PatSignatureReverse>
 
 #. For ``:type`` and ``:kind`` command for ``ghci`` we describe Bi-Signatures in next 2 formats
 
