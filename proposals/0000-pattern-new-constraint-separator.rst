@@ -507,7 +507,13 @@ But the new syntax separates them.
 With explicit ``forall`` we could rewrite signature for previous example
 ::
 
-    pattern ExNumPat :: forall b. (Num a, Eq a) => forall a.(Show b) => b -> T a
+    pattern ExNumPat :: forall b. (Num a, Eq a) => forall a. (Show b) => b -> T a
+    pattern ExNumPat x = MkT 42 x
+
+Or in more traditional way
+::
+
+    pattern ExNumPat :: forall b. (Num a, Eq a) => forall a b. (Show b) => b -> T a
     pattern ExNumPat x = MkT 42 x
 
 An example without requested Constraint, but with requested ``forall``
