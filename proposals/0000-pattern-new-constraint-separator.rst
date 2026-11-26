@@ -403,22 +403,26 @@ Syntax changes for GHCI
 
 #. For ``:info`` command for ``ghci`` we describe Signatures in next format
 
-.. code:: none
+   .. code:: none
 
     ghci> :info <PatName>
     pattern <PatName> <- :: <PatSignatureObverse> 
       where
         pattern <PatName> -> :: <PatSignatureReverse>
 
-#. For ``:type`` and ``:kind`` command for ``ghci`` we describe Bi-Signatures in next 2 formats
+#. For ``:type`` and ``:kind`` command for ``ghci`` we show 2 Signatures (if it has 2) in next format
 
-.. code:: none
+   .. code:: none
 
     ghci> :type <PatName>
       <PatName> <- :: <PatSignatureObverse>
     [ <PatName> -> :: <PatSignatureReverse> ]
 
-    ghci> :type <PatName> <PatDirection>
+#. For ``:type`` and ``:kind`` command for ``ghci`` we add optional parameter ``+pd <PatDirection>`` for patterns only
+
+   .. code:: none
+
+    ghci> :type +pd <PatDirection> <PatName>
     <PatName> <PatDirection> :: <PatSignatureDirection>
 
 #. The compiler errors with Bi-Signatures uses same format as ``:type`` command
@@ -598,10 +602,10 @@ for patterns that it was used before
     ghci> :t Head
     Head <- :: a -> [a]
 
-    ghci> :t Head <-
+    ghci> :t +pd <- Head
     Head <- :: a -> [a]
 
-    ghci> :t Head ->
+    ghci> :t +pd -> Head
     ERROR
 
     ////
@@ -610,10 +614,10 @@ for patterns that it was used before
     Double <- :: (Eq a) |- a -> (a, a)
     Double -> :: a -> (a, a)
 
-    ghci> :t Double <-
+    ghci> :t +pd <- Double
     Double <- :: (Eq a) |- a -> (a, a)
 
-    ghci> :t Double ->
+    ghci> :t +pd -> Double
     Double -> :: a -> (a, a)
 
 Effect and Interactions
