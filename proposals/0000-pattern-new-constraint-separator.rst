@@ -158,20 +158,26 @@ We wish to clarify this by adding an expected **unpinning** rule.
 Proposed Change Specification
 -----------------------------
 
-Unpinned Pattern-Synonyms Signatures from declaration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Alternate naming of Pattern Synonyms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We clarify that in the ``PatternSynonyms`` extension, 
-pattern-synonym signatures are **unpinned** from pattern-synonym declarations. 
+This proposal suggests to give an additional name to "Pattern Synonyms".
+We call them "DataLike Patterns". 
 
-Renaming names of Bidirectional Pattern Synonyms
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Why?
+
+#. "Pattern Synonyms" sounds like "synonyms to patterns", even most the time they are synonyms to data constructors.
+#. Is "synonym to pattern" also a pattern? If yes (and this is true), why do we not call them just "patterns"?
+#. How to distinguish "patterns", which are pattern-synonyms, from "patterns", which are not?
+
+Renaming Bidirectional DataLike Patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This proposal suggests the following renaming:
 
-- from "Inferred Bidirectional Pattern" to "Symmetric Bidirectional Pattern",
+- from "Inferred Bidirectional Pattern" to "Symmetric [Bidirectional] Pattern",
   because Pattern Construction and Destruction have the same signature
-- from "Explicit Bidirectional Pattern" to "Asymmetric Bidirectional Pattern",
+- from "Explicit Bidirectional Pattern" to "Asymmetric [Bidirectional] Pattern",
   because Pattern Construction and Destruction could have (and often have) different signatures
 
 Why? Because of wrong naming. Right now, by convention, the names of Bidirectional Patterns are:
@@ -179,16 +185,18 @@ Why? Because of wrong naming. Right now, by convention, the names of Bidirection
 - Inferred Bidirectional Pattern, but it is unclear what is inferred
 - Explicit Bidirectional Pattern, but it is unclear what is non-explicit in the "Inferred" pattern
 
-Naming Signatures for Pattern Synonyms
+Since there are no other "symmetric" and "asymmetric" patterns, the term "bidirectional" is redundant in the naming.
+
+Naming Signatures for DataLike Patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For Asymmetric Bidirectional Pattern, we call signatures:
+For Asymmetric Bidirectional Pattern, we name signatures:
 
-- "Left-Handed Signature", same as "Obversed Signature" 
+- "Left-Handed Signature", same as "Obversed Signature", same as "Pattern-Deconstructor Signature" 
   for the first signature (which is before the ``where`` clause),
   which is connected to Pattern declaration with ``<-`` mark 
   for Deconstruction as Pattern role.
-- "Right-Handed Signature", same as "Reversed Signature" 
+- "Right-Handed Signature", same as "Reversed Signature", same as "Pattern-Constructor Signature"  
   for the second signature (which is after the ``where`` clause),
   which is connected to Pattern declaration with ``=`` (instead of ``->``) mark 
   for Construction as Expression role.
@@ -203,6 +211,12 @@ or "One-Handed Signature" (because it doesn't have a Right-Handed Signature),
 which is connected to Pattern declaration with ``<-`` mark 
 for Deconstruction as Pattern role.
 
+Unpinned Pattern-Synonyms Signatures from declaration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We clarify that in the ``PatternSynonyms`` extension, 
+pattern-synonym signatures are **unpinned** from pattern-synonym declarations. 
+
 Changing the Requested separator and allowing more parameters in Req/Prov parts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -212,12 +226,12 @@ For much simpler and more flexible syntax
 
 #. We make the operator ``|-`` a keyword in signatures. At least in a Constraint Namespace.
 
-#. We start to distinguish requested explicit ``forall`` from provided one and have errors 
+#. We start to distinguish a requested explicit ``forall`` from provided one and have errors 
    if it is declared in the wrong part of the signature.
 
-#. it is possible to repeat SAME explicit type variables from requested part of ``forall`` 
-   in provided part of explicit ``forall`` if pattern use implicit type application
-   and order of type varibles matters.
+#. We could repeat SAME explicit type variables from the requested part of ``forall`` 
+   in the provided part of explicit ``forall`` if pattern uses implicit type application
+   and the order of type variables matters.
 
 #. We make the requested part optional/omittable.
    ::
@@ -232,7 +246,7 @@ For much simpler and more flexible syntax
    as a Deprecated one with a warning until ``CurriedContext`` 
    (or similar) extension is developed or earlier.
 
-These changes allow to have any of the following both in the Requested and the Provided parts of a patsyn:
+These changes allow to have any of the following both in the Requested and the Provided parts of data-like patterns:
 
 - Invisible forall ``forall (a::k).`` or ``forall {k}.``
 - Visible forall forall ``(a::k) ->``
@@ -263,10 +277,10 @@ Changes for Reverse signatures
         -- mandatory keyword "pattern" here
         Double a = (a, a)
 
-#. We make Reverse Signature for Asymmetric Bidirectional Pattern optionally explicit.
+#. We make Reverse Signature for Asymmetric Bidirectional Patterns optionally explicit.
 
    Right now, Asymmetric Bidirectional Pattern has an optional obverse signature 
-   and an inferred reverse signature, and by this proposal, 
+   and always inferred reverse signature, and by this proposal, 
    both obverse and reverse signatures are optional.
    That means we choose "Alternative 1" from the Accepted 42nd proposal:
    the compiler tries to infer Reverse Signature when it is omitted.
@@ -281,26 +295,26 @@ Changes for Reverse signatures
 
    - Constraints could be different
 
-Optional Explicitly directional Signatures
+Optional explicitly directional Signatures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Despite the 42nd Proposal, we add optional explicit direction marks 
 to Signatures just after the ``pattern`` keyword :
 ::
 
-    -- Unidirectional Pattern Synonym
+    -- Unidirectional DataLike Pattern
     --    optional mark "<-" here
     --       v
     pattern <- Head :: a -> [a]
     pattern Head x <- x : _
 
-    -- Symmetric Bidirectional Pattern Synonym
+    -- Symmetric Bidirectional DataLike Pattern
     --    optional mark "<->" here
     --       v
     pattern <-> Pair :: a -> b -> (a, b)
     pattern Pair x y = (x, y)
 
-    -- Asymmetric Bidirectional Pattern Synonym
+    -- Asymmetric Bidirectional DataLike Pattern
     --    optional mark "<-" here
     --       v
     pattern <- Double :: (Eq a) |- a -> (a, a)
@@ -363,7 +377,7 @@ Bi-Signatures Representation for Patterns
 
    And Bidirectional Patterns have a Second-Right-Handed Signature.
 
-   So, Unidirectional Pattern has 1 Signature, and it is always a Left-Handed Signature.
+   So, Unidirectional DataLike Pattern has 1 Signature, and it is always a Left-Handed Signature.
 
 #. Commands in ``ghci`` - ``:type`` and ``:kind`` for patterns shows bi-signatures 
    with direction marks.
@@ -396,12 +410,13 @@ Directional markers are not keywords and could be "overlapped" with
 operator-function or operator-type declarations.
 
 To avoid Unicode renaming with ``UnicodeSyntax`` extension (since ``<->`` is not a keyword), 
-we explicitly allow use ``↔`` (Left Right Arrow, U+2194) symbol to represent ``<->`` mark.
+we explicitly allow use ``↔`` (Left Right Arrow, U+2194) symbol to represent ``<->`` mark
+regardless if ``UnicodeSyntax`` is switched on or off.
 
 Syntax changes for GHCI
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. For ``:info`` command for ``ghci`` we describe Signatures in next format
+#. For ``:info`` command for ``ghci`` we describe Signatures for Asymmetric Pattern in next format
 
    .. code:: none
 
@@ -701,7 +716,7 @@ Use different *operators* as separators, for example:
 #. Use ``=>`` and ``<-`` for separator. **Pro**: they show direction. They are already keywords.
    **Cons**: ``<-`` looks like type application and ``=>`` looks like context separator.
 
-#. Use ``<=>`` insead of ``<->`` for marker. **Pro**: they show direction.
+#. Use ``<=>`` instead of ``<->`` for marker. **Pro**: they show direction.
    **Cons**: ``<=>`` looks like context separator or equality.
 
 Function arguments in Requested part
